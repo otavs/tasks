@@ -1,0 +1,10 @@
+{
+  "name": "tasks",
+  "private": true,
+  "scripts": {
+    "start": "concurrently \"npm start --prefix back\" \"npm start --prefix front\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
