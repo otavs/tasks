@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./tasks.db"
+}
+
+model Task {
+  day   Int
+  month Int
+  year  Int
+  title String
+
+  @@id([day, month, year])
+}

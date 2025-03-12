@@ -1,14 +1,17 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node --no-warnings --watch-path=src src/index.ts"
+    "dev": "node --no-warnings --watch-path=src src/index.ts",
+    "migrate": "node src/index.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.5.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "prisma": "^6.5.0"
   }
 }
