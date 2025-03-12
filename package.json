@@ -2,7 +2,7 @@
   "name": "tasks",
   "private": true,
   "scripts": {
-    "start": "concurrently \"npm start --prefix back\" \"npm start --prefix front\""
+    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

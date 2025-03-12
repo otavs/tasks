@@ -4,7 +4,7 @@ function App() {
   const [hello, setHello] = useState('')
 
   useEffect(() => {
-    fetch('/').then(async (res) => {
+    fetch('http://localhost:3000/').then(async (res) => {
       const txt = await res.text()
       console.log(txt)
       setHello(txt)
