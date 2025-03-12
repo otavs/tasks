@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node index.ts --no-warnings"
+    "dev": "node --no-warnings --watch-path=src src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
