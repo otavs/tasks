@@ -1,60 +1,80 @@
-import { useEffect, useState } from 'react'
-
-type TaskDate = {
-  day: number
-  month: number
-  year: number
-}
-
-type Task = {
-  title: string
-  time: number
-}
+import { useQuery } from '@tanstack/react-query'
+import { useAtom } from 'jotai'
+import { dateAtom } from './state.ts'
+import { Task } from './types.tsx'
 
 export default function App() {
-  const today = new Date()
-  const [date, setDate] = useState<TaskDate>({
-    day: today.getDate(),
-    month: today.getMonth() + 1,
-    year: today.getFullYear(),
-  })
-
-  const [tasks, setTasks] = useState<Task[]>(randomTasks(5))
-
-  useEffect(() => {})
+  const [date] = useAtom(dateAtom)
 
   return (
     <>
       <div className="flex justify-around text-red-500">
-        <div>&lt;</div>
-        <div>
-          {date.day} / {date.month} / {date.year}
-        </div>
-        <div>&gt;</div>
+        <ButtonChangeDay inc={-1} />
+        {date.day} / {date.month} / {date.year}
+        <ButtonChangeDay inc={1} />
       </div>
 
-      <div className="flex flex-col items-center justify-center">
-        {tasks.map(task => (
-          <div className="m-2 flex w-1/2 cursor-pointer justify-center rounded border p-2 hover:bg-amber-100">
-            {task.title}
-          </div>
-        ))}
-      </div>
+      <Tasks />
+
+      <button className=""></button>
     </>
   )
 }
 
-function randomTasks(n: number): Task[] {
-  const titles = ['Task A', 'Task B', 'Task C', 'Task D', 'Task E']
+function ButtonChangeDay({ inc }: { inc: number }) {
+  const [_, setDate] = useAtom(dateAtom)
 
-  const tasks: Task[] = []
-
-  for (let i = 0; i < n; i++) {
-    const title = titles[Math.floor(Math.random() * titles.length)]
-    const time = Math.floor(Math.random() * 100) + 1
-
-    tasks.push({ title, time })
+  function onClick() {
+    setDate(prev => {
+      const newDate = new Date(prev.year, prev.month - 1, prev.day + inc)
+      return {
+        day: newDate.getDate(),
+        month: newDate.getMonth() + 1,
+        year: newDate.getFullYear(),
+      }
+    })
   }
 
-  return tasks
+  return (
+    <button className="min-w-5 cursor-pointer bg-amber-200" onClick={onClick}>
+      {inc == 1 ? `>` : `<`}
+    </button>
+  )
+}
+
+function Tasks() {
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: fetchTasks,
+  })
+
+  if (isPending) {
+    return <span>Loading...</span>
+  }
+
+  if (isError) {
+    return <span>Error: {error.message}</span>
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      {data.map(task => (
+        <div className="m-2 flex w-1/2 cursor-pointer justify-center rounded border p-2 hover:bg-amber-100">
+          {task.title}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+async function fetchTasks() {
+  console.log('a')
+
+  const res = await fetch('http://localhost:3000/tasks')
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch tasks: ${res.statusText}`)
+  }
+
+  return (await res.json()) as Task[]
 }
