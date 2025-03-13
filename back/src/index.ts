@@ -8,7 +8,7 @@ const app = express()
 
 app.use(cors())
 
-app.post('/task', async (req, res) => {
+app.post('/tasks', async (req, res) => {
   const user = await prisma.task.create({
     data: {
       day: 1,
@@ -19,6 +19,18 @@ app.post('/task', async (req, res) => {
   })
 
   console.log(user)
+})
+
+app.get('/tasks', async (req, res) => {
+  const tasks = await prisma.task.findMany({
+    where: {
+      day: 1,
+      month: 1,
+      year: 2025,
+    },
+  })
+
+  res.json(tasks)
 })
 
 app.listen(port, () => {
