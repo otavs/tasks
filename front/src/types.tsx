@@ -1,10 +1,11 @@
-export type TaskDate = {
+export type TaskDateModel = {
   day: number
   month: number
   year: number
 }
 
-export type Task = {
+export type TaskModel = {
+  id?: number
   title: string
-  time: number
+  date?: TaskDateModel
 }

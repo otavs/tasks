@@ -1,0 +1,55 @@
+import { useAtom } from 'jotai'
+import { dateAtom } from '../state.ts'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { TaskModel } from '../types.tsx'
+
+const host = 'http://localhost:3000'
+
+export const useGetTasks = () => {
+  const [date] = useAtom(dateAtom)
+
+  return useQuery({
+    queryKey: ['tasks', date.day, date.month, date.year],
+    queryFn: async () => {
+      const response = await fetch(`${host}/tasks/${date.day}-${date.month}-${date.year}`)
+      if (response.status == 404) return Promise.resolve('hi')
+      if (!response.ok) throw new Error('Failed to fetch user data')
+      return response.json()
+    },
+  })
+}
+
+export const useDeleteTask = () => {
+  const queryClient = useQueryClient()
+  const [date] = useAtom(dateAtom)
+
+  return useMutation({
+    mutationFn: async (taskId: number) => {
+      const res = await fetch(`${host}/tasks/${taskId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete task')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })
+    },
+  })
+}
+
+export const useCreateTask = () => {
+  const queryClient = useQueryClient()
+  const [date] = useAtom(dateAtom)
+
+  return useMutation({
+    mutationFn: async (task: TaskModel) => {
+      const res = await fetch(`${host}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      })
+      if (!res.ok) throw new Error('Failed to create task')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })
+    },
+  })
+}

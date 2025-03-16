@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --no-warnings --watch-path=src src/index.ts",
-    "migrate": "node src/index.ts"
+    "migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
