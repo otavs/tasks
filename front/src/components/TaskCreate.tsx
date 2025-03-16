@@ -49,6 +49,8 @@ export function TaskCreate() {
   )
 
   async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
     createTask.mutate(
       { title, date },
       {
