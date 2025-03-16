@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
@@ -9,7 +9,14 @@ export function TaskCreate() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [title, setTitle] = useState('')
 
+  const inputTitleRef = useRef<HTMLInputElement>(null)
   const createTask = useCreateTask()
+
+  useEffect(() => {
+    if (isModalOpen) {
+      inputTitleRef.current?.focus()
+    }
+  }, [isModalOpen])
 
   return (
     <>
@@ -25,13 +32,14 @@ export function TaskCreate() {
             <input
               type="text"
               value={title}
+              ref={inputTitleRef}
               onChange={e => setTitle(e.target.value)}
               placeholder="Enter title"
               className="w-full rounded-md border border-gray-300 px-4 py-2"
             />
           </div>
           <div className="flex justify-center">
-            <button type="submit" className="rounded-md bg-blue-500 px-4 py-1 text-white">
+            <button type="submit" className="cursor-pointer rounded-md bg-blue-500 px-4 py-1 text-white">
               Submit
             </button>
           </div>

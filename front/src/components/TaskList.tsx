@@ -16,7 +16,7 @@ export function TaskList() {
   return (
     <div className="flex flex-col items-center justify-center">
       {data.map((task: TaskModel) => (
-        <Task task={task} />
+        <Task task={task} key={task.id} />
       ))}
     </div>
   )
