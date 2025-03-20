@@ -26,7 +26,7 @@ export function TaskList() {
   )
 
   if (isPending) {
-    return <span>Loading...</span>
+    return
   }
 
   if (isError) {
