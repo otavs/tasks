@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node --no-warnings --watch-path=src src/index.ts",
+    "dev": "node --no-warnings --watch-path=src src/server.ts",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev"
   },

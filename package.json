@@ -2,9 +2,11 @@
   "name": "tasks",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\""
+    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
+    "electron": "electron main.js"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.3"
   }
 }
