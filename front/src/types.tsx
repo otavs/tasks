@@ -8,4 +8,5 @@ export type TaskModel = {
   id?: number
   title: string
   date?: TaskDateModel
+  position?: number
 }

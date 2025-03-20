@@ -8,9 +8,10 @@ datasource db {
 }
 
 model Task {
-  id    Int    @id @default(autoincrement())
-  day   Int
-  month Int
-  year  Int
-  title String
+  id       Int    @id @default(autoincrement())
+  day      Int
+  month    Int
+  year     Int
+  title    String
+  position Int
 }

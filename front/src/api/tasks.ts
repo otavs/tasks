@@ -53,3 +53,23 @@ export const useCreateTask = () => {
     },
   })
 }
+
+export const useReorderTask = () => {
+  const queryClient = useQueryClient()
+  const [date] = useAtom(dateAtom)
+
+  return useMutation({
+    mutationFn: async (payload: { id: number; newPosition: number }) => {
+      const res = await fetch(`${host}/tasks/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Failed to reorder tasks')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })
+    },
+  })
+}
