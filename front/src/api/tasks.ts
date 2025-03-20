@@ -3,7 +3,7 @@ import { dateAtom } from '../state.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TaskCreateModel } from '../types.tsx'
 
-const host = 'http://localhost:3006'
+const BACK_URL = import.meta.env.VITE_BACKEND_URL
 
 export const useGetTasks = () => {
   const [date] = useAtom(dateAtom)
@@ -11,7 +11,7 @@ export const useGetTasks = () => {
   return useQuery({
     queryKey: ['tasks', date.day, date.month, date.year],
     queryFn: async () => {
-      const response = await fetch(`${host}/tasks/${date.day}-${date.month}-${date.year}`)
+      const response = await fetch(`${BACK_URL}/tasks/${date.day}-${date.month}-${date.year}`)
       if (response.status == 404) return Promise.resolve('hi')
       if (!response.ok) throw new Error('Failed to fetch user data')
       return response.json()
@@ -25,7 +25,7 @@ export const useDeleteTask = () => {
 
   return useMutation({
     mutationFn: async (taskId: number) => {
-      const res = await fetch(`${host}/tasks/${taskId}`, { method: 'DELETE' })
+      const res = await fetch(`${BACK_URL}/tasks/${taskId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete task')
     },
     onSuccess: () => {
@@ -40,7 +40,7 @@ export const useCreateTask = () => {
 
   return useMutation({
     mutationFn: async (task: TaskCreateModel) => {
-      const res = await fetch(`${host}/tasks`, {
+      const res = await fetch(`${BACK_URL}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task),
@@ -60,7 +60,7 @@ export const useUpdateTask = () => {
 
   return useMutation({
     mutationFn: async ({ id, title }: { id: number; title: string }) => {
-      const res = await fetch(`${host}/tasks/${id}`, {
+      const res = await fetch(`${BACK_URL}/tasks/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
@@ -80,7 +80,7 @@ export const useReorderTask = () => {
 
   return useMutation({
     mutationFn: async (payload: { id: number; newPosition: number }) => {
-      const res = await fetch(`${host}/tasks/reorder`, {
+      const res = await fetch(`${BACK_URL}/tasks/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

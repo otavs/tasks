@@ -2,7 +2,7 @@
   "name": "tasks",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
+    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\" \"npm run electron\"",
     "electron": "electron main.js"
   },
   "devDependencies": {

@@ -1,26 +1,17 @@
+import 'dotenv/config'
+
 import express from 'express'
 import cors from 'cors'
-import path from 'path'
 import { prisma } from './prisma.ts'
 
 import type { Request, Response } from 'express'
-import { fileURLToPath } from 'url'
 
-const PORT = 3006
+const PORT = process.env.NODE_ENV === 'development' ? process.env.PORT : 0
 
 const app = express()
 app.use(express.json())
 
 app.use(cors())
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-app.use(express.static(path.join(__dirname, '../../front/dist')))
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../front/dist', 'index.html'))
-})
 
 app.post('/tasks', async (req: Request, res: Response) => {
   const { title, date = {} } = req.body
