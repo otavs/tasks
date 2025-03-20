@@ -3,6 +3,7 @@ import { dateAtom } from './state.ts'
 import { ButtonChangeDay } from './components/ButtonChangeDay.tsx'
 import { TaskList } from './components/TaskList.tsx'
 import { TaskCreate } from './components/TaskCreate.tsx'
+import { TaskEdit } from './components/TaskEdit.tsx'
 
 export default function App() {
   const [date] = useAtom(dateAtom)
@@ -18,6 +19,8 @@ export default function App() {
       <TaskList />
 
       <TaskCreate />
+
+      <TaskEdit />
     </>
   )
 }

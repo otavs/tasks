@@ -41,7 +41,7 @@ export function TaskList() {
         onDragEnd={handleDragEnd}
         modifiers={[restrictToVerticalAxis, restrictToParentElement]}
       >
-        <SortableContext items={tasksSorted} strategy={verticalListSortingStrategy}>
+        <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
           {tasksSorted.map((task: TaskModel) => (
             <Task key={task.id} task={task} />
           ))}

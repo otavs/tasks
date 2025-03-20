@@ -4,9 +4,14 @@ export type TaskDateModel = {
   year: number
 }
 
+export type TaskCreateModel = {
+  title: string
+  date: TaskDateModel
+}
+
 export type TaskModel = {
-  id?: number
+  id: number
   title: string
   date?: TaskDateModel
-  position?: number
+  position: number
 }

@@ -1,4 +1,4 @@
-import { TaskDateModel } from './types'
+import { TaskDateModel, TaskModel } from './types'
 import { atom } from 'jotai'
 
 const today = new Date()
@@ -8,3 +8,6 @@ export const dateAtom = atom<TaskDateModel>({
   month: today.getMonth() + 1,
   year: today.getFullYear(),
 })
+
+export const taskEditAtom = atom<TaskModel>()
+export const isEditingTaskAtom = atom(false)

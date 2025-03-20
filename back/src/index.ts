@@ -39,46 +39,7 @@ app.post('/tasks', async (req: Request, res: Response) => {
   }
 })
 
-app.get('/tasks/:date', async (req: Request, res: Response) => {
-  const { date } = req.params
-
-  if (!date || typeof date !== 'string') {
-    res.status(400).json({ error: 'Missing or invalid date format. Use dd-mm-yyyy.' })
-    return
-  }
-
-  const dateParts = date.split('-').map(Number)
-  if (dateParts.length !== 3 || dateParts.some(isNaN)) {
-    res.status(400).json({ error: 'Invalid date format. Use dd-mm-yyyy.' })
-    return
-  }
-
-  const [day, month, year] = dateParts
-
-  try {
-    const tasks = await prisma.task.findMany({
-      where: { day, month, year },
-    })
-    res.json(tasks)
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch tasks' })
-  }
-})
-
-app.delete('/tasks/:id', async (req: Request, res: Response) => {
-  const { id } = req.params
-
-  try {
-    const deletedTask = await prisma.task.delete({
-      where: { id: Number(id) },
-    })
-    res.json({ message: 'Task deleted successfully', task: deletedTask })
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete task' })
-  }
-})
-
-app.post('/tasks/reorder', async (req, res) => {
+app.put('/tasks/reorder', async (req, res) => {
   const { id, newPosition } = req.body
 
   if (id === undefined || newPosition === undefined) {
@@ -123,6 +84,67 @@ app.post('/tasks/reorder', async (req, res) => {
   } catch (error) {
     console.error('Error reordering tasks:', error)
     res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+app.put('/tasks/:id', async (req: Request, res: Response) => {
+  const { id } = req.params
+  const { title } = req.body
+
+  if (!title) {
+    res.status(400).json({ error: 'Title is required' })
+    return
+  }
+
+  try {
+    const updatedTask = await prisma.task.update({
+      where: { id: Number(id) },
+      data: { title },
+    })
+
+    res.json(updatedTask)
+  } catch (error) {
+    console.error('Error updating task:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+app.get('/tasks/:date', async (req: Request, res: Response) => {
+  const { date } = req.params
+
+  if (!date || typeof date !== 'string') {
+    res.status(400).json({ error: 'Missing or invalid date format. Use dd-mm-yyyy.' })
+    return
+  }
+
+  const dateParts = date.split('-').map(Number)
+  if (dateParts.length !== 3 || dateParts.some(isNaN)) {
+    res.status(400).json({ error: 'Invalid date format. Use dd-mm-yyyy.' })
+    return
+  }
+
+  const [day, month, year] = dateParts
+
+  try {
+    const tasks = await prisma.task.findMany({
+      where: { day, month, year },
+    })
+    res.json(tasks)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch tasks' })
+  }
+})
+
+app.delete('/tasks/:id', async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  try {
+    const deletedTask = await prisma.task.delete({
+      where: { id: Number(id) },
+    })
+    res.json({ message: 'Task deleted successfully', task: deletedTask })
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete task' })
   }
 })
 

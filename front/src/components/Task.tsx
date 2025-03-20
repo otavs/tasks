@@ -3,6 +3,8 @@ import { useDeleteTask } from '../api/tasks.ts'
 import { TaskModel } from '../types.tsx'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useAtom } from 'jotai'
+import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
 
 interface Props {
   task: TaskModel
@@ -11,6 +13,10 @@ interface Props {
 export function Task({ task }: Props) {
   const deleteTask = useDeleteTask()
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null)
+
+  const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
+  const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
+
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id! })
 
   const style = {
@@ -27,16 +33,11 @@ export function Task({ task }: Props) {
       >
         <div>{task.title}</div>
         <div>
-          <button
-            className="min-w-5 cursor-pointer bg-amber-200"
-            onClick={() => openEdition(task.id!)}
-            disabled={deleteTask.isPending}
-          >
+          <button className="min-w-5 cursor-pointer bg-amber-200" onClick={openEdition} disabled={deleteTask.isPending}>
             E
           </button>
           <button
             className="min-w-5 cursor-move bg-amber-200"
-            onClick={() => handleDelete(task.id!)}
             disabled={deleteTask.isPending}
             {...attributes}
             {...listeners}
@@ -45,7 +46,7 @@ export function Task({ task }: Props) {
           </button>
           <button
             className="min-w-5 cursor-pointer bg-amber-200"
-            onClick={() => handleDelete(task.id!)}
+            onClick={handleDelete}
             disabled={deleteTask.isPending}
           >
             D
@@ -55,16 +56,18 @@ export function Task({ task }: Props) {
     </>
   )
 
-  function handleDelete(id: number) {
-    setDeletingTaskId(id)
+  function handleDelete() {
+    setDeletingTaskId(task.id)
 
     setTimeout(async () => {
-      deleteTask.mutate(id)
+      deleteTask.mutate(task.id)
     }, 500)
   }
 
-  function openEdition(id: number) {
-    // set editing task id
-    // open modal
+  function openEdition() {
+    if (taskEdit?.id !== task.id) {
+      setTaskEdit(task)
+    }
+    setIsEditingTask(true)
   }
 }
