@@ -9,23 +9,13 @@ import { useEffect, useState } from 'react'
 export default function App() {
   const [date] = useAtom(dateAtom)
 
-  const [time, setTime] = useState(new Date())
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(new Date())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
-
   return (
     <>
       <div className="my-3 flex items-center justify-around">
         <ButtonChangeDay inc={-1} />
         <div>
           <div className="flex justify-center text-2xl">{dateFormatted()}</div>
-          <div className="flex justify-center text-2xl">{timeFormatted()}</div>
+          <Time />
         </div>
         <ButtonChangeDay inc={1} />
       </div>
@@ -38,16 +28,30 @@ export default function App() {
     </>
   )
 
-  function dateFormatted() {
-    return `${padZero(date.day, 2)} - ${padZero(date.month, 2)} - ${date.year}`
+  function Time() {
+    const [time, setTime] = useState(new Date())
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setTime(new Date())
+      }, 1000)
+
+      return () => clearInterval(interval)
+    }, [])
+
+    return <div className="flex justify-center text-2xl">{timeFormatted()}</div>
+
+    function timeFormatted() {
+      const hours = String(time.getHours()).padStart(2, '0')
+      const minutes = String(time.getMinutes()).padStart(2, '0')
+      const seconds = String(time.getSeconds()).padStart(2, '0')
+
+      return `${hours} : ${minutes} : ${seconds}`
+    }
   }
 
-  function timeFormatted() {
-    const hours = String(time.getHours()).padStart(2, '0')
-    const minutes = String(time.getMinutes()).padStart(2, '0')
-    const seconds = String(time.getSeconds()).padStart(2, '0')
-
-    return `${hours} : ${minutes} : ${seconds}`
+  function dateFormatted() {
+    return `${padZero(date.day, 2)} - ${padZero(date.month, 2)} - ${date.year}`
   }
 
   function padZero(n: number, digits: number) {

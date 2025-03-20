@@ -18,7 +18,7 @@ export function ButtonChangeDay({ inc }: { inc: number }) {
 
   return (
     <div className="flex flex-col justify-center" onClick={onClick}>
-      <button className="cursor-pointer rounded-3xl bg-blue-300 p-3 hover:bg-amber-100">
+      <button className="cursor-pointer rounded-3xl bg-blue-300 p-3 border-2 border-transparent hover:border-blue-600">
         {inc == 1 ? <FaChevronRight /> : <FaChevronLeft />}
       </button>
     </div>

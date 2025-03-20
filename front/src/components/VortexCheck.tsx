@@ -23,8 +23,8 @@ export function VortexCheck() {
           style={{ pointerEvents: 'none' }}
         >
           {particles.map((_, i) => {
-            const angle = (i / PARTICLE_COUNT) * Math.PI * 6 // Spiral effect
-            const radius = -40 - (i / PARTICLE_COUNT) * 40 // Moves inward
+            const angle = (i / PARTICLE_COUNT) * Math.PI * 6
+            const radius = -40 - (i / PARTICLE_COUNT) * 40
             const x = 50 + Math.cos(angle) * radius
             const y = 50 + Math.sin(angle) * radius
 

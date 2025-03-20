@@ -27,7 +27,7 @@ export function TaskEdit() {
               value={taskEdit?.title}
               ref={inputTitleRef}
               onChange={e => setTaskEdit({ ...taskEdit!, title: e.target.value })}
-              placeholder="Enter title"
+              placeholder="Title"
               className="w-full rounded-md border border-gray-300 px-4 py-2"
             />
           </div>

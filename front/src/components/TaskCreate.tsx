@@ -23,7 +23,7 @@ export function TaskCreate() {
     <>
       <div className="flex justify-center">
         <button
-          className="my-4 cursor-pointer rounded-3xl bg-blue-300 p-3 hover:bg-amber-100"
+          className="my-4 cursor-pointer rounded-3xl bg-blue-300 p-3 border-2 border-transparent hover:border-blue-600"
           onClick={() => setIsModalOpen(true)}
         >
           <FaPlus />
@@ -38,7 +38,7 @@ export function TaskCreate() {
               value={title}
               ref={inputTitleRef}
               onChange={e => setTitle(e.target.value)}
-              placeholder="Enter title"
+              placeholder="Title"
               className="w-full rounded-md border border-gray-300 px-4 py-2"
             />
           </div>
