@@ -20,7 +20,7 @@ export function TaskEdit() {
   return (
     <>
       <Modal isOpen={isEditingTask} onClose={() => setIsEditingTask(false)}>
-        <form className="p-6" onSubmit={handleSubmit}>
+        <form className="p-6 bg-nice-green" onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
               type="text"
@@ -28,12 +28,12 @@ export function TaskEdit() {
               ref={inputTitleRef}
               onChange={e => setTaskEdit({ ...taskEdit!, title: e.target.value })}
               placeholder="Title"
-              className="w-full rounded-md border border-gray-300 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 bg-sky-50"
             />
           </div>
           <div className="flex justify-center">
-            <button type="submit" className="cursor-pointer rounded-md bg-blue-500 px-4 py-1 text-white">
-              Submit
+            <button type="submit" className="cursor-pointer rounded-3xl border-2 border-transparent bg-blue-500 px-5 py-2 text-white hover:border-blue-900">
+              Update
             </button>
           </div>
         </form>

@@ -1,11 +1,19 @@
 @import "tailwindcss";
 
+:root {
+  --nice-green: rgb(228, 255, 225);
+}
+
 body {
-  background-color: rgb(228, 255, 225);
+  background-color: var(--nice-green);
+}
+
+.bg-nice-green {
+  background-color: var(--nice-green);
 }
 
 .delete-animation {
-  animation: vortex 1.6s ease-in-out;
+  animation: vortex 1.6s ease-out;
 }
 
 @keyframes vortex {

@@ -23,7 +23,7 @@ export function TaskCreate() {
     <>
       <div className="flex justify-center">
         <button
-          className="my-4 cursor-pointer rounded-3xl bg-blue-300 p-3 border-2 border-transparent hover:border-blue-600"
+          className="my-4 cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600"
           onClick={() => setIsModalOpen(true)}
         >
           <FaPlus />
@@ -31,7 +31,7 @@ export function TaskCreate() {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <form className="p-6" onSubmit={handleSubmit}>
+        <form className="p-6 bg-nice-green" onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
               type="text"
@@ -39,12 +39,12 @@ export function TaskCreate() {
               ref={inputTitleRef}
               onChange={e => setTitle(e.target.value)}
               placeholder="Title"
-              className="w-full rounded-md border border-gray-300 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 bg-sky-50"
             />
           </div>
           <div className="flex justify-center">
-            <button type="submit" className="cursor-pointer rounded-md bg-blue-500 px-4 py-1 text-white">
-              Submit
+            <button className="cursor-pointer rounded-3xl border-2 border-transparent bg-blue-500 px-5 py-2 text-white hover:border-blue-900">
+              Add
             </button>
           </div>
         </form>

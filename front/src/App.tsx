@@ -28,6 +28,11 @@ export default function App() {
     </>
   )
 
+  function isCurrentDate() {
+    const today = new Date()
+    return date.day == today.getDate() && date.month == today.getMonth() + 1 && date.year == today.getFullYear()
+  }
+
   function Time() {
     const [time, setTime] = useState(new Date())
 
@@ -39,7 +44,7 @@ export default function App() {
       return () => clearInterval(interval)
     }, [])
 
-    return <div className="flex justify-center text-2xl">{timeFormatted()}</div>
+    return <div className="flex justify-center text-2xl">{isCurrentDate() ? timeFormatted() : `-`}</div>
 
     function timeFormatted() {
       const hours = String(time.getHours()).padStart(2, '0')
