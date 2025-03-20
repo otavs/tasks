@@ -5,6 +5,10 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAtom } from 'jotai'
 import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
+import { RiDragMoveFill } from 'react-icons/ri'
+import { MdEdit } from 'react-icons/md'
+import { VortexCheck } from './VortexCheck.tsx'
+import Confetti from 'react-canvas-confetti';
 
 interface Props {
   task: TaskModel
@@ -29,27 +33,27 @@ export function Task({ task }: Props) {
       <div
         ref={setNodeRef}
         style={style}
-        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-1/2 justify-between rounded border p-2 hover:bg-amber-100`}
+        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-8/10 justify-between items-center rounded border bg-blue-200 p-2 hover:bg-amber-100 sm:w-100`}
       >
-        <div>{task.title}</div>
-        <div>
-          <button className="min-w-5 cursor-pointer bg-amber-200" onClick={openEdition} disabled={deleteTask.isPending}>
-            E
+        <div className="m-1">{task.title}</div>
+        <div className="align-center flex justify-center gap-1">
+          <button
+            className="min-w-5 cursor-pointer hover:text-amber-700"
+            onClick={openEdition}
+            disabled={deleteTask.isPending}
+          >
+            <MdEdit className="text-2xl" />
           </button>
           <button
-            className="min-w-5 cursor-move bg-amber-200"
+            className="min-w-5 cursor-move hover:text-amber-700"
             disabled={deleteTask.isPending}
             {...attributes}
             {...listeners}
           >
-            M
+            <RiDragMoveFill className="text-2xl" />
           </button>
-          <button
-            className="min-w-5 cursor-pointer bg-amber-200"
-            onClick={handleDelete}
-            disabled={deleteTask.isPending}
-          >
-            D
+          <button className="min-w-5 cursor-pointer" onClick={handleDelete} disabled={deleteTask.isPending}>
+            <VortexCheck />
           </button>
         </div>
       </div>

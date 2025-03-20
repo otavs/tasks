@@ -3,6 +3,7 @@ import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
 import { useCreateTask } from '../api/tasks.ts'
+import { FaPlus } from 'react-icons/fa6'
 
 export function TaskCreate() {
   const [date] = useAtom(dateAtom)
@@ -21,8 +22,11 @@ export function TaskCreate() {
   return (
     <>
       <div className="flex justify-center">
-        <button className="min-w-5 cursor-pointer bg-amber-200" onClick={() => setIsModalOpen(true)}>
-          +
+        <button
+          className="my-4 cursor-pointer rounded-3xl bg-blue-300 p-3 hover:bg-amber-100"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <FaPlus />
         </button>
       </div>
 

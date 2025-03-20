@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+body {
+  background-color: rgb(228, 255, 225);
+}
+
 .delete-animation {
   animation: fadeOut 0.5s forwards;
 }
