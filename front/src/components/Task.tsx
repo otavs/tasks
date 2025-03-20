@@ -8,7 +8,7 @@ import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
 import { RiDragMoveFill } from 'react-icons/ri'
 import { MdEdit } from 'react-icons/md'
 import { VortexCheck } from './VortexCheck.tsx'
-import Confetti from 'react-canvas-confetti';
+import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
 
 interface Props {
   task: TaskModel
@@ -23,6 +23,8 @@ export function Task({ task }: Props) {
 
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id! })
 
+  const [playConfetti, setPlayConfetti] = useState(false)
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -33,7 +35,7 @@ export function Task({ task }: Props) {
       <div
         ref={setNodeRef}
         style={style}
-        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-8/10 justify-between items-center rounded border bg-blue-200 p-2 hover:bg-amber-100 sm:w-100`}
+        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-8/10 items-center justify-between rounded border bg-blue-200 p-2 hover:bg-amber-100 sm:w-100`}
       >
         <div className="m-1">{task.title}</div>
         <div className="align-center flex justify-center gap-1">
@@ -57,6 +59,8 @@ export function Task({ task }: Props) {
           </button>
         </div>
       </div>
+
+      {playConfetti && <Fireworks autorun={{ speed: 100, duration: 100 }} />}
     </>
   )
 
@@ -65,7 +69,9 @@ export function Task({ task }: Props) {
 
     setTimeout(async () => {
       deleteTask.mutate(task.id)
-    }, 500)
+    }, 1500)
+
+    setPlayConfetti(true)
   }
 
   function openEdition() {

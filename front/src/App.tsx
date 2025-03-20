@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 
 export default function App() {
   const [date] = useAtom(dateAtom)
+
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function App() {
 
   return (
     <>
-      <div className="my-3 flex justify-around items-center">
+      <div className="my-3 flex items-center justify-around">
         <ButtonChangeDay inc={-1} />
         <div>
           <div className="flex justify-center text-2xl">{dateFormatted()}</div>
