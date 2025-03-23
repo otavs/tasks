@@ -21,15 +21,15 @@ export function TaskList() {
   const [date] = useAtom(dateAtom)
   const queryClient = useQueryClient()
 
-  const { data: tasks, isPending, isError, error } = useGetTasksQuery()
-  const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
-  const [optimisticTasks, setOptimisticTasks] = useState<TaskModel[]>([])
+  const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
+  const [tasks, setTasks] = useState<TaskModel[]>([])
+  const tasksSorted = tasksRes?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
 
   useEffect(() => {
-    setOptimisticTasks(tasksSorted)
-  }, [tasks])
+    setTasks(tasksRes)
+  }, [tasksRes])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -54,11 +54,8 @@ export function TaskList() {
         onDragEnd={handleDragEnd}
         modifiers={[restrictToVerticalAxis, restrictToParentElement]}
       >
-        <SortableContext
-          items={optimisticTasks.map((task: TaskModel) => task.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {optimisticTasks.map((task: TaskModel) => (
+        <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
+          {tasksSorted.map((task: TaskModel) => (
             <Task key={task.id} task={task} />
           ))}
         </SortableContext>
@@ -73,14 +70,14 @@ export function TaskList() {
       return
     }
 
-    const oldIndex = optimisticTasks.findIndex(task => task.id === active.id)
-    const newIndex = optimisticTasks.findIndex(task => task.id === over.id)
+    const oldIndex = tasks.findIndex(task => task.id === active.id)
+    const newIndex = tasks.findIndex(task => task.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) {
       return
     }
 
-    const updatedTasks = [...optimisticTasks]
+    const updatedTasks = [...tasks]
     const [movedTask] = updatedTasks.splice(oldIndex, 1)
     updatedTasks.splice(newIndex, 0, movedTask)
 
@@ -88,7 +85,7 @@ export function TaskList() {
       task.position = index
     })
 
-    setOptimisticTasks(updatedTasks)
+    setTasks(updatedTasks)
 
     queryClient.setQueryData(['tasks', date.day, date.month, date.year], updatedTasks)
 
@@ -97,8 +94,8 @@ export function TaskList() {
       {
         onSuccess: () => console.log('Reordered task'),
         onError: () => {
-          setOptimisticTasks(tasksSorted)
-          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksSorted)
+          setTasks(tasksRes)
+          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
         },
       }
     )
