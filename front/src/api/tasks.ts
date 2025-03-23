@@ -16,6 +16,7 @@ export const useGetTasksQuery = () => {
       if (!response.ok) throw new Error('Failed to fetch user data')
       return response.json()
     },
+    refetchInterval: 10000,
   })
 }
 
