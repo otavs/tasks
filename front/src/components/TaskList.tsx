@@ -70,14 +70,14 @@ export function TaskList() {
       return
     }
 
-    const oldIndex = tasks.findIndex(task => task.id === active.id)
-    const newIndex = tasks.findIndex(task => task.id === over.id)
+    const oldIndex = tasksSorted.findIndex(task => task.id === active.id)
+    const newIndex = tasksSorted.findIndex(task => task.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) {
       return
     }
 
-    const updatedTasks = [...tasks]
+    const updatedTasks = [...tasksSorted]
     const [movedTask] = updatedTasks.splice(oldIndex, 1)
     updatedTasks.splice(newIndex, 0, movedTask)
 
@@ -86,8 +86,6 @@ export function TaskList() {
     })
 
     setTasks(updatedTasks)
-
-    queryClient.setQueryData(['tasks', date.day, date.month, date.year], updatedTasks)
 
     reorderTask.mutate(
       { id: movedTask.id, newPosition: newIndex },
