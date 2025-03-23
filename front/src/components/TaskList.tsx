@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
 import { useEffect, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
@@ -51,18 +52,20 @@ export function TaskList() {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-      >
-        <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
-          {tasksSorted.map((task: TaskModel) => (
-            <Task key={task.id} task={task} onDelete={handleDeleteTask} />
-          ))}
-        </SortableContext>
-      </DndContext>
+      <AnimatePresence>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        >
+          <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
+            {tasksSorted.map((task: TaskModel) => (
+              <Task key={task.id} task={task} onDelete={handleDeleteTask} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </AnimatePresence>
     </div>
   )
 

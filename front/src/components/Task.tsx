@@ -9,6 +9,7 @@ import { MdEdit } from 'react-icons/md'
 import { VortexCheck } from './VortexCheck.tsx'
 import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
 import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types/normalization'
+import { motion } from 'framer-motion'
 
 interface Props {
   task: TaskModel
@@ -32,10 +33,14 @@ export function Task({ task, onDelete }: Props) {
 
   return (
     <>
-      <div
+      <motion.div
         ref={setNodeRef}
         style={style}
         className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-8/10 items-center justify-between rounded border bg-blue-200 p-2 hover:bg-amber-100 sm:w-100`}
+        layout // This makes other items move smoothly
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
         <div className="m-1">{task.title}</div>
         <div className="align-center flex justify-center gap-1">
@@ -49,7 +54,7 @@ export function Task({ task, onDelete }: Props) {
             <VortexCheck />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {playConfetti && (
         <Fireworks
