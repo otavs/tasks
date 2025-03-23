@@ -23,7 +23,7 @@ export function TaskList() {
 
   const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
   const [tasks, setTasks] = useState<TaskModel[]>([])
-  const tasksSorted = tasksRes?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
+  const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
 
