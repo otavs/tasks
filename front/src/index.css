@@ -22,7 +22,7 @@ body {
     transform: rotate(0deg) translateY(0) scale(1);
   }
   to {
-    opacity: 1;
+    opacity: 0.5;
     transform: rotate(-2000deg) translateY(0) scale(0);
   }
 }
