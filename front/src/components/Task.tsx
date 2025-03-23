@@ -9,6 +9,7 @@ import { RiDragMoveFill } from 'react-icons/ri'
 import { MdEdit } from 'react-icons/md'
 import { VortexCheck } from './VortexCheck.tsx'
 import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
+import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types/normalization'
 
 interface Props {
   task: TaskModel
@@ -60,7 +61,14 @@ export function Task({ task }: Props) {
         </div>
       </div>
 
-      {playConfetti && <Fireworks autorun={{ speed: 100, duration: 100 }} />}
+      {playConfetti && (
+        <Fireworks
+          autorun={{ speed: 30, duration: 100 }}
+          decorateOptions={(options: TCanvasConfettiAnimationOptions) => ({
+            ...options,
+          })}
+        />
+      )}
     </>
   )
 
