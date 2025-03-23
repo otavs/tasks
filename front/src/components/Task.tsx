@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useDeleteTaskMutation } from '../api/tasks.ts'
 import { TaskModel } from '../types.tsx'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -13,10 +12,10 @@ import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/type
 
 interface Props {
   task: TaskModel
+  onDelete: (taskId: number) => void
 }
 
-export function Task({ task }: Props) {
-  const deleteTask = useDeleteTaskMutation()
+export function Task({ task, onDelete }: Props) {
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null)
 
   const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
@@ -40,22 +39,13 @@ export function Task({ task }: Props) {
       >
         <div className="m-1">{task.title}</div>
         <div className="align-center flex justify-center gap-1">
-          <button
-            className="min-w-5 cursor-pointer hover:text-amber-700"
-            onClick={openEdition}
-            disabled={deleteTask.isPending}
-          >
+          <button className="min-w-5 cursor-pointer hover:text-amber-700" onClick={openEdition}>
             <MdEdit className="text-2xl" />
           </button>
-          <button
-            className="min-w-5 cursor-move hover:text-amber-700"
-            disabled={deleteTask.isPending}
-            {...attributes}
-            {...listeners}
-          >
+          <button className="min-w-5 cursor-move hover:text-amber-700" {...attributes} {...listeners}>
             <RiDragMoveFill className="text-2xl" />
           </button>
-          <button className="min-w-5 cursor-pointer" onClick={handleDelete} disabled={deleteTask.isPending}>
+          <button className="min-w-5 cursor-pointer" onClick={handleDelete}>
             <VortexCheck />
           </button>
         </div>
@@ -76,7 +66,7 @@ export function Task({ task }: Props) {
     setDeletingTaskId(task.id)
 
     setTimeout(async () => {
-      deleteTask.mutate(task.id)
+      onDelete(task.id)
     }, 1500)
 
     setPlayConfetti(true)

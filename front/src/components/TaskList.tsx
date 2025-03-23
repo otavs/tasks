@@ -1,4 +1,4 @@
-import { useGetTasksQuery, useReorderTaskMutation } from '../api/tasks.ts'
+import { useDeleteTaskMutation, useGetTasksQuery, useReorderTaskMutation } from '../api/tasks.ts'
 import {
   closestCenter,
   DndContext,
@@ -26,9 +26,12 @@ export function TaskList() {
   const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
+  const deleteTask = useDeleteTaskMutation()
 
   useEffect(() => {
-    setTasks(tasksRes)
+    console.log(deleteTask.isPending)
+    if (!deleteTask.isPending)
+      setTasks(tasksRes)
   }, [tasksRes])
 
   const sensors = useSensors(
@@ -56,7 +59,7 @@ export function TaskList() {
       >
         <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
           {tasksSorted.map((task: TaskModel) => (
-            <Task key={task.id} task={task} />
+            <Task key={task.id} task={task} onDelete={handleDeleteTask} />
           ))}
         </SortableContext>
       </DndContext>
@@ -90,12 +93,24 @@ export function TaskList() {
     reorderTask.mutate(
       { id: movedTask.id, newPosition: newIndex },
       {
-        onSuccess: () => console.log('Reordered task'),
         onError: () => {
           setTasks(tasksRes)
           queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
         },
       }
     )
+  }
+
+  function handleDeleteTask(taskId: number) {
+    const updatedTasks = tasks.filter(task => task.id !== taskId)
+
+    setTasks(updatedTasks)
+
+    deleteTask.mutate(taskId, {
+      onError: () => {
+        setTasks(tasksRes)
+        queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
+      },
+    })
   }
 }
