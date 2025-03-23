@@ -13,7 +13,7 @@ body {
 }
 
 .delete-animation {
-  animation: vortex 1.6s ease-out;
+  animation: vortex 1.6s ease-out forwards;
 }
 
 @keyframes vortex {
