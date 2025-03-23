@@ -1,4 +1,4 @@
-import { useGetTasks, useReorderTask } from '../api/tasks.ts'
+import { useGetTasksQuery, useReorderTaskMutation } from '../api/tasks.ts'
 import {
   closestCenter,
   DndContext,
@@ -21,11 +21,11 @@ export function TaskList() {
   const [date] = useAtom(dateAtom)
   const queryClient = useQueryClient()
 
-  const { data: tasks, isPending, isError, error } = useGetTasks()
+  const { data: tasks, isPending, isError, error } = useGetTasksQuery()
   const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
   const [optimisticTasks, setOptimisticTasks] = useState<TaskModel[]>([])
 
-  const reorderTask = useReorderTask()
+  const reorderTask = useReorderTaskMutation()
 
   useEffect(() => {
     setOptimisticTasks(tasksSorted)

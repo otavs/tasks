@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useDeleteTask } from '../api/tasks.ts'
+import { useDeleteTaskMutation } from '../api/tasks.ts'
 import { TaskModel } from '../types.tsx'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function Task({ task }: Props) {
-  const deleteTask = useDeleteTask()
+  const deleteTask = useDeleteTaskMutation()
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null)
 
   const [, setIsEditingTask] = useAtom(isEditingTaskAtom)

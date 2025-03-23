@@ -5,7 +5,7 @@ import { TaskCreateModel } from '../types.tsx'
 
 const host = 'http://localhost:3000'
 
-export const useGetTasks = () => {
+export const useGetTasksQuery = () => {
   const [date] = useAtom(dateAtom)
 
   return useQuery({
@@ -19,7 +19,7 @@ export const useGetTasks = () => {
   })
 }
 
-export const useDeleteTask = () => {
+export const useDeleteTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
 
@@ -34,7 +34,7 @@ export const useDeleteTask = () => {
   })
 }
 
-export const useCreateTask = () => {
+export const useCreateTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
 
@@ -54,7 +54,7 @@ export const useCreateTask = () => {
   })
 }
 
-export const useUpdateTask = () => {
+export const useUpdateTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
 
@@ -74,7 +74,7 @@ export const useUpdateTask = () => {
   })
 }
 
-export const useReorderTask = () => {
+export const useReorderTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
 
