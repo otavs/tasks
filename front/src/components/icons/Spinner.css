@@ -1,0 +1,10 @@
+.spinner_SoJz {
+  transform-origin: center;
+  animation: spinner_YGAN 1.5s linear infinite;
+}
+
+@keyframes spinner_YGAN {
+  100% {
+    transform: rotate(360deg);
+  }
+}
