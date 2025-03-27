@@ -3,7 +3,7 @@ import { dateAtom } from '../state.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { TaskCreateModel } from '../types.tsx'
 
-const host = 'http://localhost:3000'
+const host = import.meta.env.VITE_HOST
 
 export const useGetTasksQuery = () => {
   const [date] = useAtom(dateAtom)
