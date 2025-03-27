@@ -4,6 +4,7 @@ import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
 import { useCreateTaskMutation } from '../api/tasks.ts'
 import { FaPlus } from 'react-icons/fa6'
+import { useKeyPress } from '../hooks/useKeyPress.ts'
 
 export function TaskCreate() {
   const [date] = useAtom(dateAtom)
@@ -18,6 +19,9 @@ export function TaskCreate() {
       inputTitleRef.current?.focus()
     }
   }, [isModalOpen])
+
+  useKeyPress('n', () => setIsModalOpen(true))
+  useKeyPress('Escape', () => setIsModalOpen(false))
 
   return (
     <>
