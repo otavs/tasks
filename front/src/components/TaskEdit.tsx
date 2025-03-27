@@ -3,6 +3,7 @@ import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
 import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
 import { useUpdateTaskMutation } from '../api/tasks.ts'
+import { useKeyPress } from '../hooks/useKeyPress.ts'
 
 export function TaskEdit() {
   const inputTitleRef = useRef<HTMLInputElement>(null)
@@ -16,6 +17,8 @@ export function TaskEdit() {
       inputTitleRef.current?.focus()
     }
   }, [isEditingTask])
+
+  useKeyPress('Escape', () => setIsEditingTask(false))
 
   return (
     <>
