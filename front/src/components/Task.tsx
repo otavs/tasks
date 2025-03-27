@@ -68,7 +68,7 @@ export function Task({ task, onDelete }: Props) {
           },
         }}
       >
-        <div className="m-1">{task.title}</div>
+        <div className="break-words m-1">{task.title}</div>
         <div className="align-center flex justify-center gap-1">
           <button className="min-w-5 cursor-pointer hover:text-amber-700" onClick={openEdition}>
             <MdEdit className="text-2xl" />

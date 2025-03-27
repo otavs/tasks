@@ -26,3 +26,7 @@ body {
     transform: rotate(-2000deg) translateY(0) scale(0);
   }
 }
+
+.break-words {
+  word-break: break-word;
+}
