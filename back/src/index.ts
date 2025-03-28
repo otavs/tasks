@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import { prisma } from './prisma.ts'
 
 import type { Request, Response } from 'express'
@@ -7,9 +8,16 @@ import type { Request, Response } from 'express'
 const port = 3000
 
 const app = express()
-app.use(express.json())
 
+app.use(express.json())
 app.use(cors())
+app.use(rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 1000,
+  message: 'Too many requests ;u;',
+  standardHeaders: false,
+  legacyHeaders: false,
+}))
 
 app.post('/tasks', async (req: Request, res: Response) => {
   const { title, date = {} } = req.body
