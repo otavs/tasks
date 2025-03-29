@@ -20,6 +20,8 @@ import { dateAtom, isDraggingTaskAtom } from '../state.ts'
 import { useEffect, useState } from 'react'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
 import { DropMove } from './DropMove.tsx'
+import { restrictToWindowEdges } from '@dnd-kit/modifiers'
+import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
@@ -79,6 +81,7 @@ export function TaskList() {
       collisionDetection={customCollisionDetection}
       onDragEnd={handleDragEnd}
       onDragStart={handleDragStart}
+      modifiers={[restrictToParentElementY, restrictToWindowEdges]}
     >
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
