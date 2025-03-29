@@ -11,13 +11,15 @@ const app = express()
 
 app.use(express.json())
 app.use(cors())
-app.use(rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 1000,
-  message: 'Too many requests ;u;',
-  standardHeaders: false,
-  legacyHeaders: false,
-}))
+app.use(
+  rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 1000,
+    message: 'Too many requests ;u;',
+    standardHeaders: false,
+    legacyHeaders: false,
+  })
+)
 
 app.post('/tasks', async (req: Request, res: Response) => {
   const { title, date = {} } = req.body
