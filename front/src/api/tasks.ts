@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { TaskCreateModel } from '../types.tsx'
+import { TaskCreateModel, TaskDateModel } from '../types.tsx'
 
 const host = import.meta.env.VITE_HOST
 
@@ -88,6 +88,25 @@ export const useReorderTaskMutation = () => {
       })
       if (!res.ok) throw new Error('Failed to reorder tasks')
       return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })
+    },
+  })
+}
+
+export const useMoveTaskMutation = () => {
+  const queryClient = useQueryClient()
+  const [date] = useAtom(dateAtom)
+
+  return useMutation({
+    mutationFn: async (payload: { id: number; date: TaskDateModel }) => {
+      const res = await fetch(`${host}/tasks/move`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Failed to move task')
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })

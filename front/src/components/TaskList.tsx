@@ -1,4 +1,4 @@
-import { useDeleteTaskMutation, useGetTasksQuery, useReorderTaskMutation } from '../api/tasks.ts'
+import { useDeleteTaskMutation, useGetTasksQuery, useMoveTaskMutation, useReorderTaskMutation } from '../api/tasks.ts'
 import {
   ClientRect,
   closestCenter,
@@ -32,6 +32,7 @@ export function TaskList() {
 
   const reorderTask = useReorderTaskMutation()
   const deleteTask = useDeleteTaskMutation()
+  const moveTask = useMoveTaskMutation()
 
   useEffect(() => {
     console.log(deleteTask.isPending)
@@ -106,8 +107,12 @@ export function TaskList() {
       return
     }
 
-    if (over.id === 'moveToPrevious' || over.id === 'moveToNext') {
-      return handleMoveTask(Number(active.id), over.id)
+    if (over.id === 'moveToPrevious') {
+      return handleMoveTask(Number(active.id), -1)
+    }
+
+    if (over.id === 'moveToNext') {
+      return handleMoveTask(Number(active.id), 1)
     }
 
     const oldIndex = tasksSorted.findIndex(task => task.id === active.id)
@@ -151,16 +156,29 @@ export function TaskList() {
     })
   }
 
-  function handleMoveTask(taskId: number, moveId: string) {
+  function handleMoveTask(taskId: number, dayIncrement: number) {
     const updatedTasks = tasks.filter(task => task.id !== taskId)
 
     setTasks(updatedTasks)
 
-    // deleteTask.mutate(taskId, {
-    //   onError: () => {
-    //     setTasks(tasksRes)
-    //     queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
-    //   },
-    // })
+    const newDate = new Date(date.year, date.month - 1, date.day)
+    newDate.setDate(newDate.getDate() + dayIncrement)
+
+    moveTask.mutate(
+      {
+        id: taskId,
+        date: {
+          day: newDate.getDate(),
+          month: newDate.getMonth() + 1,
+          year: newDate.getFullYear(),
+        },
+      },
+      {
+        onError: () => {
+          setTasks(tasksRes)
+          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
+        },
+      }
+    )
   }
 }
