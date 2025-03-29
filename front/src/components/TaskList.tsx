@@ -1,24 +1,29 @@
 import { useDeleteTaskMutation, useGetTasksQuery, useReorderTaskMutation } from '../api/tasks.ts'
 import {
+  ClientRect,
   closestCenter,
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskModel } from '../types.tsx'
 import { Task } from './Task.tsx'
-import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useQueryClient } from '@tanstack/react-query'
-import { useAtom } from 'jotai'
-import { dateAtom } from '../state.ts'
+import { useAtom, useSetAtom } from 'jotai'
+import { dateAtom, isDraggingTaskAtom } from '../state.ts'
 import { useEffect, useState } from 'react'
+import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
+import { DropMove } from './DropMove.tsx'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
+  const setIsDraggingTask = useSetAtom(isDraggingTaskAtom)
   const queryClient = useQueryClient()
 
   const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
@@ -48,28 +53,61 @@ export function TaskList() {
     return <span>Error: {error.message}</span>
   }
 
+  const customCollisionDetection: CollisionDetection = args => {
+    if (isInside('moveToPrevious') || isInside('moveToNext')) {
+      return pointerWithin(args)
+    }
+
+    return closestCenter(args)
+
+    function isInside(id: string) {
+      if (!args.pointerCoordinates) return false
+      const rect = args.droppableRects.get(id)
+      if (!rect) return false
+      return isPointerInside(args.pointerCoordinates, rect)
+    }
+
+    function isPointerInside({ x, y }: Coordinates, { top, left, right, bottom }: ClientRect) {
+      return x >= left && x <= right && y >= top && y <= bottom
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-      >
-        <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
-          {tasksSorted.map((task: TaskModel) => (
-            <Task key={task.id} task={task} onDelete={handleDeleteTask} />
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={customCollisionDetection}
+      onDragEnd={handleDragEnd}
+      onDragStart={handleDragStart}
+    >
+      <div className="flex justify-evenly">
+        <DropMove id="moveToPrevious" dir="left" />
+        <div className="flex flex-col items-center justify-center">
+          <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
+            {tasksSorted.map((task: TaskModel) => (
+              <Task key={task.id} task={task} onDelete={handleDeleteTask} />
+            ))}
+          </SortableContext>
+        </div>
+        <DropMove id="moveToNext" dir="right" />
+      </div>
+    </DndContext>
   )
 
+  function handleDragStart(event: DragEndEvent) {
+    setIsDraggingTask(true)
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setIsDraggingTask(false)
+
     const { active, over } = event
 
     if (!over || active.id === over.id) {
       return
+    }
+
+    if (over.id === 'moveToPrevious' || over.id === 'moveToNext') {
+      return handleMoveTask(Number(active.id), over.id)
     }
 
     const oldIndex = tasksSorted.findIndex(task => task.id === active.id)
@@ -111,5 +149,18 @@ export function TaskList() {
         queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
       },
     })
+  }
+
+  function handleMoveTask(taskId: number, moveId: string) {
+    const updatedTasks = tasks.filter(task => task.id !== taskId)
+
+    setTasks(updatedTasks)
+
+    // deleteTask.mutate(taskId, {
+    //   onError: () => {
+    //     setTasks(tasksRes)
+    //     queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
+    //   },
+    // })
   }
 }

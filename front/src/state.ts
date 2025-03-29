@@ -11,3 +11,5 @@ export const dateAtom = atom<TaskDateModel>({
 
 export const taskEditAtom = atom<TaskModel>()
 export const isEditingTaskAtom = atom(false)
+
+export const isDraggingTaskAtom = atom(false)
