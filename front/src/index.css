@@ -30,3 +30,9 @@ body {
 .break-words {
   word-break: break-word;
 }
+
+@layer utilities {
+  html, body {
+    scrollbar-gutter: stable;
+  }
+}
