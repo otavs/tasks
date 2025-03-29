@@ -120,17 +120,13 @@ app.put('/tasks/move', async (req: Request, res: Response) => {
 
     if (oldDay == day && oldMonth == month && oldYear == year) {
       res.json({ message: 'Task is already on this day, nothing done', task: taskToMove })
+      return
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.task.updateMany({
         where: { position: { gt: position }, day: oldDay, month: oldMonth, year: oldYear },
         data: { position: { decrement: 1 } },
-      })
-
-      await tx.task.update({
-        where: { id },
-        data: { day, month, year },
       })
 
       const lastTask = await tx.task.findFirst({
@@ -142,18 +138,11 @@ app.put('/tasks/move', async (req: Request, res: Response) => {
 
       await tx.task.update({
         where: { id },
-        data: { position: newPosition },
+        data: { position: newPosition, day, month, year },
       })
-
-      if (oldDay !== day || oldMonth !== month || oldYear !== year) {
-        await tx.task.updateMany({
-          where: { position: { gt: position }, day: oldDay, month: oldMonth, year: oldYear },
-          data: { position: { decrement: 1 } },
-        })
-      }
     })
 
-    res.json({ message: 'Task moved successfully', task: taskToMove })
+    res.json({ message: 'Task moved successfully', task: { ...taskToMove, day, month, year } })
   } catch (error) {
     console.error('Error moving task:', error)
     res.status(500).json({ error: 'Failed to move task' })
