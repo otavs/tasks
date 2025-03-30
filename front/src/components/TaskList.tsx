@@ -97,7 +97,7 @@ export function TaskList() {
     </DndContext>
   )
 
-  function handleDragStart(event: DragEndEvent) {
+  function handleDragStart() {
     setIsDraggingTask(true)
   }
 
