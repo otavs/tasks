@@ -1,11 +1,10 @@
 #!/bin/bash
 
 echo "Checking if destination folder exists"
-DEST_FOLDER="${{ vars.DEST_FOLDER }}"
 if [ ! -d "$DEST_FOLDER" ]; then
   echo "Destination folder not found. Creating and cloning repository..."
   mkdir -p "$DEST_FOLDER"
-  git clone https://github.com/${{ github.repository }} "$DEST_FOLDER"
+  git clone https://github.com/$REPO "$DEST_FOLDER"
 fi
 
 echo "Updating repository"
@@ -24,8 +23,8 @@ echo "Using Node.js 23"
 nvm use 23
 
 echo "Creating .env file"
-echo "ENV=${{ vars.ENV }}" > back/.env
-echo "PORT=${{ vars.PORT }}" >> back/.env
+echo "ENV=$ENV" > back/.env
+echo "PORT=$PORT" >> back/.env
 
 echo "Building frontend"
 cd front

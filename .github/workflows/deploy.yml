@@ -8,15 +8,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Deploy
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          ENV: ${{ vars.ENV }}
+          PORT: ${{ vars.PORT }}
+          DEST_FOLDER: ${{ vars.DEST_FOLDER }}
+          REPO: ${{ github.repository }}
         with:
-          script_path: .github/scripts/deploy.sh
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_path: .github/scripts/deploy.sh
+          envs: ENV,PORT,DEST_FOLDER,REPO
