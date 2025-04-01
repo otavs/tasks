@@ -23,6 +23,7 @@ export const getTasks = async (req: Request, res: Response) => {
     })
     res.json(tasks)
   } catch (error) {
+    console.error('Error listing tasks:', error)
     res.status(500).json({ error: 'Failed to fetch tasks' })
   }
 }
