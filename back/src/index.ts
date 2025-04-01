@@ -7,6 +7,7 @@ import { rateLimiter } from './middlewares/rateLimit.ts'
 
 const app = express()
 
+app.set('trust proxy', 1)
 app.use(rateLimiter)
 
 if (process.env.ENV === 'production') {
