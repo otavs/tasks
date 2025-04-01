@@ -53,5 +53,8 @@ jobs:
               cd back
               npm install
 
+              echo "Running migrations"
+              npm run migrate:deploy
+
               echo "Restarting backend with PM2"
               pm2 restart tasks || pm2 start npm --name tasks -- start
