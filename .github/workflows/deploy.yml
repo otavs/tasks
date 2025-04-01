@@ -27,8 +27,9 @@ jobs:
 
               echo "Updating repository"
               cd "$DEST_FOLDER"
-              git reset --hard
-              git pull origin main --force
+              git fetch
+              git checkout -f main
+              git reset --hard origin/main
 
               echo "Setting up Node.js 23"
               source ~/.nvm/nvm.sh
