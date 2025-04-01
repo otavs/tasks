@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Deploy
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           script_path: .github/scripts/deploy.sh
           host: ${{ secrets.SSH_HOST }}
