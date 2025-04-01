@@ -23,7 +23,7 @@ export function DropMove({ id, dir }: { id: string; dir: 'left' | 'right' }) {
         scale: { duration: 3, repeat: Infinity, ease: 'linear' },
         backgroundColor: { duration: 0.3, ease: 'easeInOut' },
       }}
-      className={`flex w-[20%] items-center justify-center rounded-2xl ${isOver && 'cursor-pointer'}`}
+      className={`flex w-[5%] sm:w-[20%] items-center justify-center rounded-2xl ${isOver && 'cursor-pointer'}`}
       style={{ pointerEvents: isDraggingTask ? 'auto' : 'none' }}
     >
       {dir === 'left' ? '←' : '→'}

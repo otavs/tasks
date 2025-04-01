@@ -38,7 +38,7 @@ export function Task({ task, onDelete }: Props) {
     <>
       <motion.div
         ref={setNodeRef}
-        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-8/10 items-center justify-between rounded border bg-blue-200 p-2 hover:bg-amber-100 sm:w-100`}
+        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-[100%] items-center justify-between rounded border bg-blue-200 p-2 hover:bg-amber-100`}
         layoutId={String(task.id)}
         layout
         initial={{ opacity: 1, y: -10 }}

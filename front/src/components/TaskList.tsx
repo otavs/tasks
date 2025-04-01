@@ -83,11 +83,11 @@ export function TaskList() {
       collisionDetection={customCollisionDetection}
       onDragEnd={handleDragEnd}
       onDragStart={handleDragStart}
-      modifiers={[restrictToParentElementY, restrictToWindowEdges]}
+      modifiers={[restrictToParentElementY]}
     >
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center w-[80%] sm:w-[400px]">
           <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
             {tasksSorted.map((task: TaskModel) => (
               <Task key={task.id} task={task} onDelete={handleDeleteTask} />
