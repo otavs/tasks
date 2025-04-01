@@ -17,16 +17,16 @@ import { TaskModel } from '../types.tsx'
 import { Task } from './Task.tsx'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAtom, useSetAtom } from 'jotai'
-import { dateAtom, isDraggingTaskAtom } from '../state.ts'
+import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state.ts'
 import { useEffect, useState } from 'react'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
 import { DropMove } from './DropMove.tsx'
-import { restrictToWindowEdges } from '@dnd-kit/modifiers'
 import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
   const setIsDraggingTask = useSetAtom(isDraggingTaskAtom)
+  const setDraggingTaskId = useSetAtom(draggingTaskIdAtom)
   const queryClient = useQueryClient()
 
   const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
@@ -87,7 +87,7 @@ export function TaskList() {
     >
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
-        <div className="flex flex-col items-center justify-center w-[80%] sm:w-[400px]">
+        <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
           <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
             {tasksSorted.map((task: TaskModel) => (
               <Task key={task.id} task={task} onDelete={handleDeleteTask} />
@@ -99,12 +99,15 @@ export function TaskList() {
     </DndContext>
   )
 
-  function handleDragStart() {
+  function handleDragStart(event: DragEndEvent) {
+    const { active } = event
     setIsDraggingTask(true)
+    setDraggingTaskId(Number(active.id))
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setIsDraggingTask(false)
+    setDraggingTaskId(null)
 
     const { active, over } = event
 

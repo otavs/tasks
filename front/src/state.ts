@@ -13,3 +13,4 @@ export const taskEditAtom = atom<TaskModel>()
 export const isEditingTaskAtom = atom(false)
 
 export const isDraggingTaskAtom = atom(false)
+export const draggingTaskIdAtom = atom<number | null>()

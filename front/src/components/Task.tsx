@@ -2,7 +2,7 @@ import { TaskModel } from '../types.tsx'
 import { useSortable } from '@dnd-kit/sortable'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
+import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '../state.ts'
 import { useAtom } from 'jotai'
 import { MdEdit } from 'react-icons/md'
 import { RiDragMoveFill } from 'react-icons/ri'
@@ -23,6 +23,7 @@ const initialStyles = {
 
 export function Task({ task, onDelete }: Props) {
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null)
+  const [draggingTaskId] = useAtom(draggingTaskIdAtom)
 
   const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
   const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
@@ -38,7 +39,7 @@ export function Task({ task, onDelete }: Props) {
     <>
       <motion.div
         ref={setNodeRef}
-        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-[100%] items-center justify-between rounded border bg-blue-200 p-2 hover:bg-amber-100`}
+        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
         layoutId={String(task.id)}
         layout
         initial={{ opacity: 1, y: -10 }}
