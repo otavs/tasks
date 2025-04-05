@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
 import { DropMove } from './DropMove.tsx'
 import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
+import { AnimatePresence } from 'framer-motion'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
@@ -30,17 +31,11 @@ export function TaskList() {
   const queryClient = useQueryClient()
 
   const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
-  const [tasks, setTasks] = useState<TaskModel[]>([])
-  const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
+  const tasksSorted = tasksRes?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
   const deleteTask = useDeleteTaskMutation()
   const moveTask = useMoveTaskMutation()
-
-  useEffect(() => {
-    console.log(deleteTask.isPending)
-    if (!deleteTask.isPending) setTasks(tasksRes)
-  }, [tasksRes])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -89,9 +84,11 @@ export function TaskList() {
         <DropMove id="moveToPrevious" dir="left" />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
           <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
-            {tasksSorted.map((task: TaskModel) => (
-              <Task key={task.id} task={task} onDelete={handleDeleteTask} />
-            ))}
+            <AnimatePresence>
+              {tasksSorted.map((task: TaskModel) => (
+                <Task key={task.id} task={task} onDelete={handleDeleteTask} />
+              ))}
+            </AnimatePresence>
           </SortableContext>
         </div>
         <DropMove id="moveToNext" dir="right" />
@@ -138,13 +135,11 @@ export function TaskList() {
       task.position = index
     })
 
-    setTasks(updatedTasks)
 
     reorderTask.mutate(
       { id: movedTask.id, newPosition: newIndex },
       {
         onError: () => {
-          setTasks(tasksRes)
           queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
         },
       }
@@ -152,22 +147,11 @@ export function TaskList() {
   }
 
   function handleDeleteTask(taskId: number) {
-    const updatedTasks = tasks.filter(task => task.id !== taskId)
-
-    setTasks(updatedTasks)
-
-    deleteTask.mutate(taskId, {
-      onError: () => {
-        setTasks(tasksRes)
-        queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
-      },
-    })
+    deleteTask.mutate(taskId)
   }
 
   function handleMoveTask(taskId: number, dayIncrement: number) {
-    const updatedTasks = tasks.filter(task => task.id !== taskId)
-
-    setTasks(updatedTasks)
+    const updatedTasks = tasksRes!.filter(task => task.id !== taskId)
 
     const newDate = new Date(date.year, date.month - 1, date.day)
     newDate.setDate(newDate.getDate() + dayIncrement)
@@ -183,7 +167,6 @@ export function TaskList() {
       },
       {
         onError: () => {
-          setTasks(tasksRes)
           queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
         },
       }

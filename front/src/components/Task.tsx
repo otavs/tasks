@@ -22,7 +22,6 @@ const initialStyles = {
 }
 
 export function Task({ task, onDelete }: Props) {
-  const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null)
   const [draggingTaskId] = useAtom(draggingTaskIdAtom)
 
   const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
@@ -39,7 +38,7 @@ export function Task({ task, onDelete }: Props) {
     <>
       <motion.div
         ref={setNodeRef}
-        className={`${deletingTaskId === task.id ? 'delete-animation' : ''} m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
+        className={`${/*deletingTaskId === task.id ? 'delete-animation' :*/ ''} m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
         layoutId={String(task.id)}
         layout
         initial={{ opacity: 1, y: -10 }}
@@ -95,12 +94,7 @@ export function Task({ task, onDelete }: Props) {
   )
 
   function handleDelete() {
-    setDeletingTaskId(task.id)
-
-    setTimeout(async () => {
-      onDelete(task.id)
-    }, 1500)
-
+    onDelete(task.id)
     setPlayConfetti(true)
   }
 

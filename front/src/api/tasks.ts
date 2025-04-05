@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { TaskCreateModel, TaskDateModel } from '../types.tsx'
+import { TaskCreateModel, TaskDateModel, TaskModel } from '../types.tsx'
 
 const host = import.meta.env.VITE_HOST
 
@@ -12,25 +12,45 @@ export const useGetTasksQuery = () => {
     queryKey: ['tasks', date.day, date.month, date.year],
     queryFn: async () => {
       const response = await fetch(`${host}/tasks/${date.day}-${date.month}-${date.year}`)
-      if (response.status == 404) return Promise.resolve('hi')
+
+      if (response.status == 404) return Promise.resolve([])
       if (!response.ok) throw new Error('Failed to fetch user data')
-      return response.json()
+
+      const tasks = (await response.json()) as TaskModel[]
+      return Promise.resolve(tasks)
     },
-    refetchInterval: 10000,
+    // refetchInterval: 10000,
   })
 }
 
 export const useDeleteTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
+  const queryKey = ['tasks', date.day, date.month, date.year]
 
   return useMutation({
     mutationFn: async (taskId: number) => {
-      const res = await fetch(`${host}/tasks/${taskId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to delete task')
+      const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
+      const deletedTask = tasks.find(task => task.id == taskId)
+
+      queryClient.setQueryData(['tasks', date.day, date.month, date.year], (prevTasks: TaskModel[]) =>
+        prevTasks.filter(task => task.id != taskId)
+      )
+
+      const context = { deletedTask }
+
+      try {
+        const res = await fetch(`${host}/tasks/${taskId}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error('Failed to delete task')
+        return context
+      } catch (error) {
+        throw { message: 'Failed to delete task', deletedTask }
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', date.day, date.month, date.year] })
+
+    onError: (error: { message: string; deletedTask?: TaskModel }) => {
+      const deletedTask = error.deletedTask as TaskModel
+      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[]) => [...prevTasks, deletedTask])
     },
   })
 }
