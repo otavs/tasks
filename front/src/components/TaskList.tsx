@@ -152,25 +152,16 @@ export function TaskList() {
   }
 
   function handleMoveTask(taskId: number, dayIncrement: number) {
-    const updatedTasks = tasks!.filter(task => task.id !== taskId)
-
     const newDate = new Date(date.year, date.month - 1, date.day)
     newDate.setDate(newDate.getDate() + dayIncrement)
 
-    moveTask.mutate(
-      {
-        id: taskId,
-        date: {
-          day: newDate.getDate(),
-          month: newDate.getMonth() + 1,
-          year: newDate.getFullYear(),
-        },
+    moveTask.mutate({
+      id: taskId,
+      date: {
+        day: newDate.getDate(),
+        month: newDate.getMonth() + 1,
+        year: newDate.getFullYear(),
       },
-      {
-        onError: () => {
-          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasks)
-        },
-      }
-    )
+    })
   }
 }
