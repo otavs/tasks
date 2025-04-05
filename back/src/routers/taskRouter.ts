@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getTasks } from '../endpoints/tasks/getTasks.ts'
+import { listTasks } from '../endpoints/tasks/listTasks.ts'
 import { createTask } from '../endpoints/tasks/createTask.ts'
 import { deleteTask } from '../endpoints/tasks/deleteTask.ts'
 import { reorderTask } from '../endpoints/tasks/reorderTask.ts'
@@ -8,7 +8,7 @@ import { updateTask } from '../endpoints/tasks/updateTask.ts'
 
 export const taskRouter = Router()
 
-taskRouter.get('/:date', getTasks)
+taskRouter.get('/:date', listTasks)
 taskRouter.post('/', createTask)
 taskRouter.delete('/:id', deleteTask)
 taskRouter.put('/reorder', reorderTask)

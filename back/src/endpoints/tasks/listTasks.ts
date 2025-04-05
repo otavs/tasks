@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
 
-export const getTasks = async (req: Request, res: Response) => {
+export const listTasks = async (req: Request, res: Response) => {
   const { date } = req.params
 
   if (!date || typeof date !== 'string') {

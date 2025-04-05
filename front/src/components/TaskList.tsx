@@ -32,8 +32,8 @@ export function TaskList() {
   const setDraggingTaskId = useSetAtom(draggingTaskIdAtom)
   const queryClient = useQueryClient()
 
-  const { data: tasksRes, isPending, isError, error } = useListTasksQuery()
-  const tasksSorted = tasksRes?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
+  const { data: tasks, isPending, isError, error } = useListTasksQuery()
+  const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
   const deleteTask = useDeleteTaskMutation()
@@ -141,7 +141,7 @@ export function TaskList() {
       { id: movedTask.id, newPosition: newIndex },
       {
         onError: () => {
-          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
+          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasks)
         },
       }
     )
@@ -152,7 +152,7 @@ export function TaskList() {
   }
 
   function handleMoveTask(taskId: number, dayIncrement: number) {
-    const updatedTasks = tasksRes!.filter(task => task.id !== taskId)
+    const updatedTasks = tasks!.filter(task => task.id !== taskId)
 
     const newDate = new Date(date.year, date.month - 1, date.day)
     newDate.setDate(newDate.getDate() + dayIncrement)
@@ -168,7 +168,7 @@ export function TaskList() {
       },
       {
         onError: () => {
-          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasksRes)
+          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasks)
         },
       }
     )
