@@ -10,7 +10,7 @@ export const deleteTask = async (req: Request, res: Response) => {
     })
 
     if (!taskToDelete) {
-      res.status(404).json({ error: 'Task not found' })
+      res.status(404).json({ message: 'Task not found' })
       return
     }
 
