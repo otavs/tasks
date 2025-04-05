@@ -50,14 +50,9 @@ export function TaskEdit() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    updateTask.mutate(
-      { title: taskEdit!.title, id: taskEdit!.id },
-      {
-        onSuccess: () => {
-          setTaskEdit(undefined)
-          setIsEditingTask(false)
-        },
-      }
-    )
+    updateTask.mutate({ title: taskEdit!.title, id: taskEdit!.id })
+
+    setTaskEdit(undefined)
+    setIsEditingTask(false)
   }
 }
