@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
 import { dateAtom } from '../state.ts'
-import { useCreateTaskMutation } from '../api/tasks.ts'
+import { useCreateTaskMutation } from '../api/tasks/create.ts'
 import { FaPlus } from 'react-icons/fa6'
 import { useKeyPress } from '../hooks/useKeyPress.ts'
 

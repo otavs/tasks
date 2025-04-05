@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
 import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
-import { useUpdateTaskMutation } from '../api/tasks.ts'
+import { useUpdateTaskMutation } from '../api/tasks/update.ts'
 import { useKeyPress } from '../hooks/useKeyPress.ts'
 
 export function TaskEdit() {

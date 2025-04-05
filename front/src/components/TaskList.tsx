@@ -1,4 +1,7 @@
-import { useDeleteTaskMutation, useGetTasksQuery, useMoveTaskMutation, useReorderTaskMutation } from '../api/tasks.ts'
+import { useDeleteTaskMutation } from '../api/tasks/delete.ts'
+import { useListTasksQuery } from '../api/tasks/list.ts'
+import { useMoveTaskMutation } from '../api/tasks/move.ts'
+import { useReorderTaskMutation } from '../api/tasks/reorder.ts'
 import {
   ClientRect,
   closestCenter,
@@ -18,7 +21,6 @@ import { Task } from './Task.tsx'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAtom, useSetAtom } from 'jotai'
 import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state.ts'
-import { useEffect, useState } from 'react'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
 import { DropMove } from './DropMove.tsx'
 import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
@@ -30,7 +32,7 @@ export function TaskList() {
   const setDraggingTaskId = useSetAtom(draggingTaskIdAtom)
   const queryClient = useQueryClient()
 
-  const { data: tasksRes, isPending, isError, error } = useGetTasksQuery()
+  const { data: tasksRes, isPending, isError, error } = useListTasksQuery()
   const tasksSorted = tasksRes?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
@@ -134,7 +136,6 @@ export function TaskList() {
     updatedTasks.forEach((task, index) => {
       task.position = index
     })
-
 
     reorderTask.mutate(
       { id: movedTask.id, newPosition: newIndex },
