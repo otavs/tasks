@@ -63,10 +63,10 @@ export function TaskList() {
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
-          <SortableContext items={tasks.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={tasks.map((task: TaskModel) => task.uid)} strategy={verticalListSortingStrategy}>
             <AnimatePresence>
               {tasks.map((task: TaskModel) => (
-                <Task key={task.id} task={task} onDelete={handleDeleteTask} />
+                <Task key={task.uid} task={task} onDelete={handleDeleteTask} />
               ))}
             </AnimatePresence>
           </SortableContext>
@@ -92,24 +92,22 @@ export function TaskList() {
       return
     }
 
+    const movedTask = tasks!.find(task => task.uid === Number(active.id))
+    if (!movedTask) return
+
     if (over.id === 'moveToPrevious') {
-      return handleMoveTask(Number(active.id), -1)
+      return handleMoveTask(movedTask.id, -1)
     }
-
     if (over.id === 'moveToNext') {
-      return handleMoveTask(Number(active.id), 1)
+      return handleMoveTask(movedTask.id, 1)
     }
 
-    const oldIndex = tasks.findIndex(task => task.id === active.id)
-    const newIndex = tasks.findIndex(task => task.id === over.id)
+    const oldIndex = tasks.findIndex(task => task.uid === active.id)
+    const newIndex = tasks.findIndex(task => task.uid === over.id)
 
-    if (oldIndex === -1 || newIndex === -1) {
-      return
-    }
+    if (oldIndex === -1 || newIndex === -1) return
 
-    const reorderedTask = tasks?.find(task => task.id === Number(active.id))
-
-    reorderTask.mutate({ id: reorderedTask!.id, newPosition: newIndex })
+    reorderTask.mutate({ id: movedTask!.id, newPosition: newIndex })
   }
 
   function handleDeleteTask(taskId: number) {

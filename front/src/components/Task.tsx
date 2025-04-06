@@ -28,7 +28,7 @@ export function Task({ task, onDelete }: Props) {
   const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
 
   const { attributes, setNodeRef, listeners, transform, isDragging } = useSortable({
-    id: task.id,
+    id: task.uid,
     transition: null,
   })
 
@@ -39,7 +39,7 @@ export function Task({ task, onDelete }: Props) {
       <motion.div
         ref={setNodeRef}
         className={`${/*deletingTaskId === task.id ? 'delete-animation' :*/ ''} m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
-        layoutId={String(task.id)}
+        layoutId={String(task.uid)}
         layout
         initial={{ opacity: 1, y: -10 }}
         animate={
@@ -99,7 +99,7 @@ export function Task({ task, onDelete }: Props) {
   }
 
   function openEdition() {
-    if (taskEdit?.id !== task.id) {
+    if (taskEdit?.uid !== task.uid) {
       setTaskEdit(task)
     }
     setIsEditingTask(true)
