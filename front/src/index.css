@@ -12,21 +12,6 @@ body {
   background-color: var(--nice-green);
 }
 
-.delete-animation {
-  animation: vortex 1.6s ease-out forwards;
-}
-
-@keyframes vortex {
-  from {
-    opacity: 1;
-    transform: rotate(0deg) translateY(0) scale(1);
-  }
-  to {
-    opacity: 0.5;
-    transform: rotate(-2000deg) translateY(0) scale(0);
-  }
-}
-
 .break-words {
   word-break: break-word;
 }

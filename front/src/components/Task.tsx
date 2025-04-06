@@ -27,6 +27,8 @@ export function Task({ task, onDelete }: Props) {
   const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
   const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
 
+  const [isDeleted, setIsDeleted] = useState(false)
+
   const { attributes, setNodeRef, listeners, transform, isDragging } = useSortable({
     id: task.uid,
     transition: null,
@@ -38,7 +40,7 @@ export function Task({ task, onDelete }: Props) {
     <>
       <motion.div
         ref={setNodeRef}
-        className={`${/*deletingTaskId === task.id ? 'delete-animation' :*/ ''} m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
+        className={`m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
         layoutId={String(task.uid)}
         layout
         initial={{ opacity: 1, y: -10 }}
@@ -54,6 +56,19 @@ export function Task({ task, onDelete }: Props) {
                   : undefined,
               }
             : initialStyles
+        }
+        exit={
+          isDeleted
+            ? {
+                opacity: 0.5,
+                rotate: -2000,
+                scale: 0,
+                transition: {
+                  duration: 1.6,
+                  ease: 'easeOut',
+                },
+              }
+            : {}
         }
         transition={{
           duration: !isDragging ? 0.25 : 0,
@@ -94,8 +109,9 @@ export function Task({ task, onDelete }: Props) {
   )
 
   function handleDelete() {
-    onDelete(task.id)
+    setIsDeleted(true)
     setPlayConfetti(true)
+    onDelete(task.id)
   }
 
   function openEdition() {

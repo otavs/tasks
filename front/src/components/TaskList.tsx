@@ -23,6 +23,7 @@ import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state.ts'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
 import { DropMove } from './DropMove.tsx'
 import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
+import { AnimatePresence } from 'framer-motion'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)
@@ -63,9 +64,11 @@ export function TaskList() {
         <DropMove id="moveToPrevious" dir="left" />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
           <SortableContext items={tasks.map((task: TaskModel) => task.uid)} strategy={verticalListSortingStrategy}>
-            {tasks.map((task: TaskModel) => (
-              <Task key={task.uid} task={task} onDelete={handleDeleteTask} />
-            ))}
+            <AnimatePresence>
+              {tasks.map((task: TaskModel) => (
+                <Task key={task.uid} task={task} onDelete={handleDeleteTask} />
+              ))}
+            </AnimatePresence>
           </SortableContext>
         </div>
         <DropMove id="moveToNext" dir="right" />

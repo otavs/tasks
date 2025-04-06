@@ -5,26 +5,23 @@ import { TaskList } from './components/TaskList.tsx'
 import { TaskCreate } from './components/TaskCreate.tsx'
 import { TaskEdit } from './components/TaskEdit.tsx'
 import { useEffect, useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
 
 export default function App() {
   const [date] = useAtom(dateAtom)
 
   return (
     <>
-      <AnimatePresence>
-        <div className="my-3 flex items-center justify-around">
-          <ButtonChangeDay inc={-1} />
-          <div>
-            <div className="flex justify-center text-2xl">{dateFormatted()}</div>
-            <Time />
-          </div>
-          <ButtonChangeDay inc={1} />
+      <div className="my-3 flex items-center justify-around">
+        <ButtonChangeDay inc={-1} />
+        <div>
+          <div className="flex justify-center text-2xl">{dateFormatted()}</div>
+          <Time />
         </div>
-        <TaskList />
-        <TaskCreate />
-        <TaskEdit />
-      </AnimatePresence>
+        <ButtonChangeDay inc={1} />
+      </div>
+      <TaskList />
+      <TaskCreate />
+      <TaskEdit />
     </>
   )
 

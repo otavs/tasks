@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
-import { motion } from 'framer-motion'
 import { dateAtom } from '../state.ts'
 import { useCreateTaskMutation } from '../api/tasks/create.ts'
 import { FaPlus } from 'react-icons/fa6'
@@ -26,14 +25,14 @@ export function TaskCreate() {
 
   return (
     <>
-      <motion.div className="flex justify-center">
+      <div className="flex justify-center">
         <button
           className="my-4 cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600"
           onClick={() => setIsModalOpen(true)}
         >
           <FaPlus />
         </button>
-      </motion.div>
+      </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <form className="bg-nice-green p-6" onSubmit={handleSubmit}>
