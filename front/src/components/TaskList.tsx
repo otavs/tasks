@@ -63,7 +63,11 @@ export function TaskList() {
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
-          <SortableContext items={tasks.map((task: TaskModel) => task.uid)} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={tasks.map((task: TaskModel) => task.uid)}
+            strategy={verticalListSortingStrategy}
+            key={`${date.day}-${date.month}-${date.year}`}
+          >
             <AnimatePresence>
               {tasks.map((task: TaskModel) => (
                 <Task key={task.uid} task={task} onDelete={handleDeleteTask} />
