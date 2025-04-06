@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal.tsx'
 import { useAtom } from 'jotai'
+import CircleLoader from 'react-spinners/CircleLoader'
 import { dateAtom } from '../state.ts'
 import { useCreateTaskMutation } from '../api/tasks/create.ts'
 import { FaPlus } from 'react-icons/fa6'
 import { useKeyPress } from '../hooks/useKeyPress.ts'
+import { useListTasksQuery } from '../api/tasks/list.ts'
 
 export function TaskCreate() {
   const [date] = useAtom(dateAtom)
@@ -13,6 +15,9 @@ export function TaskCreate() {
 
   const inputTitleRef = useRef<HTMLInputElement>(null)
   const createTask = useCreateTaskMutation()
+
+  const { isPending } = useListTasksQuery()
+  const [showLoader, setShowLoader] = useState(false)
 
   useEffect(() => {
     if (isModalOpen) {
@@ -23,15 +28,32 @@ export function TaskCreate() {
   useKeyPress('n', () => setIsModalOpen(true))
   useKeyPress('Escape', () => setIsModalOpen(false))
 
+  useEffect(() => {
+    let timeout: NodeJS.Timeout | undefined
+
+    if (isPending) {
+      timeout = setTimeout(() => setShowLoader(true), 300)
+    } else {
+      clearTimeout(timeout)
+      setShowLoader(false)
+    }
+
+    return () => clearTimeout(timeout)
+  }, [isPending])
+
   return (
     <>
       <div className="flex justify-center">
-        <button
-          className="my-4 cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <FaPlus />
-        </button>
+        {!showLoader ? (
+          <button
+            className="my-4 cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <FaPlus />
+          </button>
+        ) : (
+          <CircleLoader color="#0bffb6" />
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
