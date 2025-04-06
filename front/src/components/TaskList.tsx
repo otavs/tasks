@@ -44,12 +44,12 @@ export function TaskList() {
     useSensor(TouchSensor)
   )
 
-  if (isPending) {
-    return
-  }
-
   if (isError) {
     return <span>Error: {error.message}</span>
+  }
+
+  if (isPending || !tasks?.length) {
+    return
   }
 
   return (
