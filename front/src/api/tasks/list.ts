@@ -16,7 +16,7 @@ export const useListTasksQuery = () => {
       if (!response.ok) throw new Error('Failed to fetch user data')
 
       const tasks = (await response.json()) as TaskModel[]
-      return Promise.resolve(tasks)
+      return Promise.resolve(tasks.sort((a, b) => a.position - b.position))
     },
     // refetchInterval: 10000,
   })

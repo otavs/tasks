@@ -18,7 +18,6 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskModel } from '../types.tsx'
 import { Task } from './Task.tsx'
-import { useQueryClient } from '@tanstack/react-query'
 import { useAtom, useSetAtom } from 'jotai'
 import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state.ts'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
@@ -30,10 +29,8 @@ export function TaskList() {
   const [date] = useAtom(dateAtom)
   const setIsDraggingTask = useSetAtom(isDraggingTaskAtom)
   const setDraggingTaskId = useSetAtom(draggingTaskIdAtom)
-  const queryClient = useQueryClient()
 
   const { data: tasks, isPending, isError, error } = useListTasksQuery()
-  const tasksSorted = tasks?.sort((a: TaskModel, b: TaskModel) => a.position! - b.position!) ?? []
 
   const reorderTask = useReorderTaskMutation()
   const deleteTask = useDeleteTaskMutation()
@@ -55,25 +52,6 @@ export function TaskList() {
     return <span>Error: {error.message}</span>
   }
 
-  const customCollisionDetection: CollisionDetection = args => {
-    if (isInside('moveToPrevious') || isInside('moveToNext')) {
-      return pointerWithin(args)
-    }
-
-    return closestCenter(args)
-
-    function isInside(id: string) {
-      if (!args.pointerCoordinates) return false
-      const rect = args.droppableRects.get(id)
-      if (!rect) return false
-      return isPointerInside(args.pointerCoordinates, rect)
-    }
-
-    function isPointerInside({ x, y }: Coordinates, { top, left, right, bottom }: ClientRect) {
-      return x >= left && x <= right && y >= top && y <= bottom
-    }
-  }
-
   return (
     <DndContext
       sensors={sensors}
@@ -85,9 +63,9 @@ export function TaskList() {
       <div className="flex justify-evenly">
         <DropMove id="moveToPrevious" dir="left" />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
-          <SortableContext items={tasksSorted.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={tasks.map((task: TaskModel) => task.id)} strategy={verticalListSortingStrategy}>
             <AnimatePresence>
-              {tasksSorted.map((task: TaskModel) => (
+              {tasks.map((task: TaskModel) => (
                 <Task key={task.id} task={task} onDelete={handleDeleteTask} />
               ))}
             </AnimatePresence>
@@ -110,7 +88,7 @@ export function TaskList() {
 
     const { active, over } = event
 
-    if (!over || active.id === over.id) {
+    if (!over || active.id === over.id || !tasks) {
       return
     }
 
@@ -122,29 +100,16 @@ export function TaskList() {
       return handleMoveTask(Number(active.id), 1)
     }
 
-    const oldIndex = tasksSorted.findIndex(task => task.id === active.id)
-    const newIndex = tasksSorted.findIndex(task => task.id === over.id)
+    const oldIndex = tasks.findIndex(task => task.id === active.id)
+    const newIndex = tasks.findIndex(task => task.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) {
       return
     }
 
-    const updatedTasks = [...tasksSorted]
-    const [movedTask] = updatedTasks.splice(oldIndex, 1)
-    updatedTasks.splice(newIndex, 0, movedTask)
+    const reorderedTask = tasks?.find(task => task.id === Number(active.id))
 
-    updatedTasks.forEach((task, index) => {
-      task.position = index
-    })
-
-    reorderTask.mutate(
-      { id: movedTask.id, newPosition: newIndex },
-      {
-        onError: () => {
-          queryClient.setQueryData(['tasks', date.day, date.month, date.year], tasks)
-        },
-      }
-    )
+    reorderTask.mutate({ id: reorderedTask!.id, newPosition: newIndex })
   }
 
   function handleDeleteTask(taskId: number) {
@@ -163,5 +128,24 @@ export function TaskList() {
         year: newDate.getFullYear(),
       },
     })
+  }
+}
+
+const customCollisionDetection: CollisionDetection = args => {
+  if (isInside('moveToPrevious') || isInside('moveToNext')) {
+    return pointerWithin(args)
+  }
+
+  return closestCenter(args)
+
+  function isInside(id: string) {
+    if (!args.pointerCoordinates) return false
+    const rect = args.droppableRects.get(id)
+    if (!rect) return false
+    return isPointerInside(args.pointerCoordinates, rect)
+  }
+
+  function isPointerInside({ x, y }: Coordinates, { top, left, right, bottom }: ClientRect) {
+    return x >= left && x <= right && y >= top && y <= bottom
   }
 }

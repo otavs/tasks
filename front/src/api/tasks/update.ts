@@ -4,7 +4,7 @@ import { dateAtom } from '../../state.ts'
 import { host, taskListKey } from '../api.ts'
 import { TaskModel } from '../../types.tsx'
 
-type Request = {
+type Payload = {
   id: number
   title: string
 }
@@ -15,7 +15,7 @@ export const useUpdateTaskMutation = () => {
   const queryKey = taskListKey(date)
 
   return useMutation({
-    onMutate: async ({ id, title }: Request) => {
+    onMutate: async ({ id, title }: Payload) => {
       await queryClient.cancelQueries({ queryKey })
 
       const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
@@ -29,7 +29,7 @@ export const useUpdateTaskMutation = () => {
       return { task }
     },
 
-    mutationFn: async ({ id, title }: Request) => {
+    mutationFn: async ({ id, title }: Payload) => {
       const res = await fetch(`${host}/tasks/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

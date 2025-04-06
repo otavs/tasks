@@ -4,27 +4,30 @@ import { dateAtom } from '../../state.ts'
 import { host, taskListKey } from '../api.ts'
 import { TaskDateModel, TaskModel } from '../../types.tsx'
 
+type Payload = {
+  id: number
+  date: TaskDateModel
+}
+
 export const useMoveTaskMutation = () => {
   const queryClient = useQueryClient()
   const [date] = useAtom(dateAtom)
   const queryKey = taskListKey(date)
 
   return useMutation({
-    onMutate: async (payload: { id: number; date: TaskDateModel }) => {
+    onMutate: async ({ id }: Payload) => {
       await queryClient.cancelQueries({ queryKey })
 
       const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
-      const movedTask = tasks?.find(task => task.id == payload.id)
+      const movedTask = tasks?.find(task => task.id == id)
       if (!movedTask) throw 'Task not found'
 
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[] = []) =>
-        prevTasks.filter(task => task.id !== payload.id)
-      )
+      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[] = []) => prevTasks.filter(task => task.id !== id))
 
       return { movedTask }
     },
 
-    mutationFn: async (payload: { id: number; date: TaskDateModel }) => {
+    mutationFn: async (payload: Payload) => {
       const res = await fetch(`${host}/tasks/move`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
