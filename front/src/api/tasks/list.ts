@@ -30,6 +30,6 @@ export const useListTasksQuery = () => {
 
       return Promise.resolve(tasks)
     },
-    refetchInterval: 1000,
+    refetchInterval: 15000,
   })
 }
