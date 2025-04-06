@@ -9,6 +9,7 @@ import { RiDragMoveFill } from 'react-icons/ri'
 import { VortexCheck } from './VortexCheck.tsx'
 import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
 import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types/normalization'
+import CircleLoader from 'react-spinners/CircleLoader'
 
 interface Props {
   task: TaskModel
@@ -85,15 +86,21 @@ export function Task({ task, onDelete }: Props) {
       >
         <div className="m-1 break-words">{task.title}</div>
         <div className="align-center flex justify-center gap-1">
-          <button className="min-w-5 cursor-pointer hover:text-amber-700" onClick={openEdition}>
-            <MdEdit className="text-2xl" />
-          </button>
-          <button className="min-w-5 cursor-move touch-none hover:text-amber-700" {...attributes} {...listeners}>
-            <RiDragMoveFill className="text-2xl" />
-          </button>
-          <button className="min-w-5 cursor-pointer" onClick={handleDelete}>
-            <VortexCheck />
-          </button>
+          {task.id != -1 ? (
+            <>
+              <button className="min-w-5 cursor-pointer hover:text-amber-700" onClick={openEdition}>
+                <MdEdit className="text-2xl" />
+              </button>
+              <button className="min-w-5 cursor-move touch-none hover:text-amber-700" {...attributes} {...listeners}>
+                <RiDragMoveFill className="text-2xl" />
+              </button>
+              <button className="min-w-5 cursor-pointer" onClick={handleDelete}>
+                <VortexCheck />
+              </button>
+            </>
+          ) : (
+            <CircleLoader size={20} color="#0519ff" />
+          )}
         </div>
       </motion.div>
 
