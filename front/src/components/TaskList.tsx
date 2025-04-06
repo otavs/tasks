@@ -48,7 +48,7 @@ export function TaskList() {
     return <span>Error: {error.message}</span>
   }
 
-  if (isPending || !tasks?.length) {
+  if (isPending) {
     return
   }
 
@@ -61,7 +61,7 @@ export function TaskList() {
       modifiers={[restrictToParentElementY]}
     >
       <div className="flex justify-evenly">
-        <DropMove id="moveToPrevious" dir="left" />
+        <DropMove id="moveToPrevious" dir="left" hide={tasks.length === 0} />
         <div className="flex w-[80%] flex-col items-center justify-center sm:w-[400px]">
           <SortableContext
             items={tasks.map((task: TaskModel) => task.uid)}
@@ -75,7 +75,7 @@ export function TaskList() {
             </AnimatePresence>
           </SortableContext>
         </div>
-        <DropMove id="moveToNext" dir="right" />
+        <DropMove id="moveToNext" dir="right" hide={tasks.length === 0} />
       </div>
     </DndContext>
   )

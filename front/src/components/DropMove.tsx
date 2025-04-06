@@ -3,11 +3,13 @@ import { isDraggingTaskAtom } from '../state.ts'
 import { useAtom } from 'jotai'
 import { motion } from 'framer-motion'
 
-export function DropMove({ id, dir }: { id: string; dir: 'left' | 'right' }) {
+export function DropMove({ id, dir, hide }: { id: string; dir: 'left' | 'right'; hide: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id })
   const [isDraggingTask] = useAtom(isDraggingTaskAtom)
 
   const duration = isOver ? 0.1 : isDraggingTask ? 3 : 0.3
+
+  if (hide) return
 
   return (
     <motion.div
@@ -23,7 +25,7 @@ export function DropMove({ id, dir }: { id: string; dir: 'left' | 'right' }) {
         scale: { duration: 3, repeat: Infinity, ease: 'linear' },
         backgroundColor: { duration: 0.3, ease: 'easeInOut' },
       }}
-      className={`flex w-[8%] sm:w-[20%] items-center justify-center rounded-2xl ${isOver && 'cursor-pointer'}`}
+      className={`flex w-[8%] items-center justify-center rounded-2xl sm:w-[20%] ${isOver && 'cursor-pointer'}`}
       style={{ pointerEvents: isDraggingTask ? 'auto' : 'none' }}
     >
       {dir === 'left' ? '←' : '→'}
