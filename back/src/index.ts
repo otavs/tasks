@@ -1,4 +1,5 @@
 import express from 'express'
+import nocache from 'nocache'
 import cors from 'cors'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -8,6 +9,9 @@ import { rateLimiter } from './middlewares/rateLimit.ts'
 const app = express()
 
 app.set('trust proxy', 1)
+app.set('etag', false)
+
+app.use(nocache())
 app.use(rateLimiter)
 
 if (process.env.ENV === 'production') {
