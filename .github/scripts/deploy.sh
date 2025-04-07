@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euxo pipefail
+
 echo "Checking if destination folder exists"
 if [ ! -d "$DEST_FOLDER" ]; then
   echo "Destination folder not found. Creating and cloning repository..."
@@ -14,7 +16,9 @@ git checkout -f main
 git reset --hard origin/main
 
 echo "Setting up Node.js 23"
+set +x
 source ~/.nvm/nvm.sh
+set -x
 if ! nvm ls 23 > /dev/null 2>&1; then
   echo "Node.js 23 not found. Installing..."
   nvm install 23

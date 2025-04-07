@@ -29,7 +29,7 @@ export function TaskCreate() {
   useKeyPress('Escape', () => setIsModalOpen(false))
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout | undefined
+    let timeout: ReturnType<typeof setTimeout> | undefined
 
     if (isPending) {
       timeout = setTimeout(() => setShowLoader(true), 300)
