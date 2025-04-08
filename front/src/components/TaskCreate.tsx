@@ -60,6 +60,7 @@ export function TaskCreate() {
         <form className="bg-nice-green p-6" onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
+              required
               type="text"
               value={title}
               ref={inputTitleRef}

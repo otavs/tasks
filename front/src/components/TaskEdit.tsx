@@ -26,6 +26,7 @@ export function TaskEdit() {
         <form className="bg-nice-green p-6" onSubmit={handleSubmit}>
           <div className="mb-4">
             <input
+              required
               type="text"
               value={taskEdit?.title}
               ref={inputTitleRef}
