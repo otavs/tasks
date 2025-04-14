@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
-import './Spinner.css'
 import { useMemo } from 'react'
+import './Spinner.css'
 
 // https://github.com/n3r4zzurr0/svg-spinners
 

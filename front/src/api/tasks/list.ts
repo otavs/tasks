@@ -1,8 +1,8 @@
+import { host, taskListKey } from '@api/api'
+import { dateAtom } from '@state/state'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { TaskModel } from '@typings/types'
 import { useAtom } from 'jotai'
-import { dateAtom } from '../../state'
-import { host, taskListKey } from '../api'
-import { TaskModel } from '../../types'
 
 export const useListTasksQuery = () => {
   const queryClient = useQueryClient()

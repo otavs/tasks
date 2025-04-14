@@ -1,5 +1,5 @@
+import { dateAtom } from '@state/state'
 import { useAtom } from 'jotai'
-import { dateAtom } from '../state'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6'
 
 export function ButtonChangeDay({ inc }: { inc: number }) {

@@ -1,9 +1,9 @@
+import { host, taskListKey } from '@api/api'
+import { dateAtom } from '@state/state'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAtom } from 'jotai'
+import { TaskModel } from '@typings/types'
 import { produce } from 'immer'
-import { dateAtom } from '../../state'
-import { host, taskListKey } from '../api'
-import { TaskModel } from '../../types'
+import { useAtom } from 'jotai'
 
 type Payload = {
   id: number

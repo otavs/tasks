@@ -1,15 +1,15 @@
-import { TaskModel } from '../types'
 import { useSortable } from '@dnd-kit/sortable'
+import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '@state/state'
+import { TaskModel } from '@typings/types'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '../state'
 import { useAtom } from 'jotai'
+import { useState } from 'react'
+import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
+import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types'
 import { MdEdit } from 'react-icons/md'
 import { RiDragMoveFill } from 'react-icons/ri'
-import { VortexCheck } from './VortexCheck'
-import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
-import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types/normalization'
 import CircleLoader from 'react-spinners/CircleLoader'
+import { VortexCheck } from './VortexCheck'
 
 interface Props {
   task: TaskModel
