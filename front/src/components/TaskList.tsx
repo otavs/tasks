@@ -1,7 +1,7 @@
-import { useDeleteTaskMutation } from '../api/tasks/delete.ts'
-import { useListTasksQuery } from '../api/tasks/list.ts'
-import { useMoveTaskMutation } from '../api/tasks/move.ts'
-import { useReorderTaskMutation } from '../api/tasks/reorder.ts'
+import { useDeleteTaskMutation } from '../api/tasks/delete'
+import { useListTasksQuery } from '../api/tasks/list'
+import { useMoveTaskMutation } from '../api/tasks/move'
+import { useReorderTaskMutation } from '../api/tasks/reorder'
 import {
   ClientRect,
   closestCenter,
@@ -16,13 +16,13 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { TaskModel } from '../types.tsx'
-import { Task } from './Task.tsx'
+import { TaskModel } from '../types'
+import { Task } from './Task'
 import { useAtom, useSetAtom } from 'jotai'
-import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state.ts'
+import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '../state'
 import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
-import { DropMove } from './DropMove.tsx'
-import { restrictToParentElementY } from '../utils/restrictToParentElementY.ts'
+import { DropMove } from './DropMove'
+import { restrictToParentElementY } from '../utils/restrictToParentElementY'
 import { AnimatePresence } from 'framer-motion'
 
 export function TaskList() {

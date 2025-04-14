@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
-import Modal from './Modal.tsx'
+import Modal from './Modal'
 import { useAtom } from 'jotai'
-import { isEditingTaskAtom, taskEditAtom } from '../state.ts'
-import { useUpdateTaskMutation } from '../api/tasks/update.ts'
-import { useKeyPress } from '../hooks/useKeyPress.ts'
+import { isEditingTaskAtom, taskEditAtom } from '../state'
+import { useUpdateTaskMutation } from '../api/tasks/update'
+import { useKeyPress } from '../hooks/useKeyPress'
 
 export function TaskEdit() {
   const inputTitleRef = useRef<HTMLInputElement>(null)

@@ -1,4 +1,4 @@
-import { TaskDateModel } from '../types.tsx'
+import { TaskDateModel } from '../types'
 
 export const host = import.meta.env.VITE_HOST
 

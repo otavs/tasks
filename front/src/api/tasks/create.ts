@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
-import { dateAtom } from '../../state.ts'
-import { host, taskListKey } from '../api.ts'
-import { TaskDateModel, TaskModel } from '../../types.tsx'
+import { dateAtom } from '../../state'
+import { host, taskListKey } from '../api'
+import { TaskDateModel, TaskModel } from '../../types'
 
 type Payload = {
   title: string
@@ -50,9 +50,7 @@ export const useCreateTaskMutation = () => {
       if (!context?.uid) {
         return
       }
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[]) =>
-        prevTasks.filter(task => task.id !== context.uid)
-      )
+      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[]) => prevTasks.filter(task => task.id !== context.uid))
     },
 
     onSuccess: (data, _newTask, context) => {

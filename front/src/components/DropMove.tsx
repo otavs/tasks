@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core'
-import { isDraggingTaskAtom } from '../state.ts'
+import { isDraggingTaskAtom } from '../state'
 import { useAtom } from 'jotai'
 import { motion } from 'framer-motion'
 

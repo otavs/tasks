@@ -1,9 +1,9 @@
 import { useAtom } from 'jotai'
-import { dateAtom } from './state.ts'
-import { ButtonChangeDay } from './components/ButtonChangeDay.tsx'
-import { TaskList } from './components/TaskList.tsx'
-import { TaskCreate } from './components/TaskCreate.tsx'
-import { TaskEdit } from './components/TaskEdit.tsx'
+import { dateAtom } from './state'
+import { ButtonChangeDay } from './components/ButtonChangeDay'
+import { TaskList } from './components/TaskList'
+import { TaskCreate } from './components/TaskCreate'
+import { TaskEdit } from './components/TaskEdit'
 import { useEffect, useState } from 'react'
 
 export default function App() {

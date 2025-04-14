@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai'
-import { dateAtom } from '../state.ts'
+import { dateAtom } from '../state'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6'
 
 export function ButtonChangeDay({ inc }: { inc: number }) {
@@ -18,7 +18,7 @@ export function ButtonChangeDay({ inc }: { inc: number }) {
 
   return (
     <div className="flex flex-col justify-center" onClick={onClick}>
-      <button className="cursor-pointer rounded-3xl bg-blue-300 p-3 border-2 border-transparent hover:border-blue-600">
+      <button className="cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600">
         {inc == 1 ? <FaChevronRight /> : <FaChevronLeft />}
       </button>
     </div>
