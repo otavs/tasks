@@ -1,9 +1,10 @@
-import { useUpdateTaskMutation } from '@api/tasks/update'
-import { useKeyPress } from '@hooks/useKeyPress'
-import { isEditingTaskAtom, taskEditAtom } from '@state/state'
 import { useAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
+
 import Modal from './Modal'
+import { useUpdateTaskMutation } from '@/api/tasks/update'
+import { useKeyPress } from '@/hooks/useKeyPress'
+import { isEditingTaskAtom, taskEditAtom } from '@/state/state'
 
 export function TaskEdit() {
   const inputTitleRef = useRef<HTMLInputElement>(null)

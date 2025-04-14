@@ -1,7 +1,8 @@
 import { useDroppable } from '@dnd-kit/core'
-import { isDraggingTaskAtom } from '@state/state'
 import { motion } from 'framer-motion'
 import { useAtom } from 'jotai'
+
+import { isDraggingTaskAtom } from '@/state/state'
 
 export function DropMove({ id, dir, hide }: { id: string; dir: 'left' | 'right'; hide: boolean }) {
   const { isOver, setNodeRef } = useDroppable({ id })

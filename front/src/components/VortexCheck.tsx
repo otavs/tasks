@@ -1,7 +1,8 @@
-import { useHover } from '@hooks/useHover'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
+
 import { Spinner } from './icons/Spinner'
+import { useHover } from '@/hooks/useHover'
 
 export function VortexCheck() {
   const { ref, hovered } = useHover<HTMLDivElement>()

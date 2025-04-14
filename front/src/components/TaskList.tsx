@@ -1,29 +1,30 @@
-import { useDeleteTaskMutation } from '@api/tasks/delete'
-import { useListTasksQuery } from '@api/tasks/list'
-import { useMoveTaskMutation } from '@api/tasks/move'
-import { useReorderTaskMutation } from '@api/tasks/reorder'
 import {
   ClientRect,
-  closestCenter,
   CollisionDetection,
   DndContext,
   DragEndEvent,
   KeyboardSensor,
   PointerSensor,
-  pointerWithin,
   TouchSensor,
+  closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { Coordinates } from '@dnd-kit/core/dist/types/coordinates'
+import { Coordinates } from '@dnd-kit/core/dist/types'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '@state/state'
-import { TaskModel } from '@typings/types'
-import { restrictToParentElementY } from '@utils/restrictToParentElementY'
 import { AnimatePresence } from 'framer-motion'
 import { useAtom, useSetAtom } from 'jotai'
+
 import { DropMove } from './DropMove'
 import { Task } from './Task'
+import { useDeleteTaskMutation } from '@/api/tasks/delete'
+import { useListTasksQuery } from '@/api/tasks/list'
+import { useMoveTaskMutation } from '@/api/tasks/move'
+import { useReorderTaskMutation } from '@/api/tasks/reorder'
+import { dateAtom, draggingTaskIdAtom, isDraggingTaskAtom } from '@/state/state'
+import { TaskModel } from '@/typings/types'
+import { restrictToParentElementY } from '@/utils/restrictToParentElementY'
 
 export function TaskList() {
   const [date] = useAtom(dateAtom)

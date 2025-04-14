@@ -1,12 +1,13 @@
-import { useCreateTaskMutation } from '@api/tasks/create'
-import { useListTasksQuery } from '@api/tasks/list'
-import { useKeyPress } from '@hooks/useKeyPress'
-import { dateAtom } from '@state/state'
 import { useAtom } from 'jotai'
 import { useEffect, useRef, useState } from 'react'
 import { FaPlus } from 'react-icons/fa6'
 import CircleLoader from 'react-spinners/CircleLoader'
+
 import Modal from './Modal'
+import { useCreateTaskMutation } from '@/api/tasks/create'
+import { useListTasksQuery } from '@/api/tasks/list'
+import { useKeyPress } from '@/hooks/useKeyPress'
+import { dateAtom } from '@/state/state'
 
 export function TaskCreate() {
   const [date] = useAtom(dateAtom)

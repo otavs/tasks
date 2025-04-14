@@ -1,6 +1,4 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '@state/state'
-import { TaskModel } from '@typings/types'
 import { motion } from 'framer-motion'
 import { useAtom } from 'jotai'
 import { useState } from 'react'
@@ -9,7 +7,10 @@ import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/type
 import { MdEdit } from 'react-icons/md'
 import { RiDragMoveFill } from 'react-icons/ri'
 import CircleLoader from 'react-spinners/CircleLoader'
+
 import { VortexCheck } from './VortexCheck'
+import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '@/state/state'
+import { TaskModel } from '@/typings/types'
 
 interface Props {
   task: TaskModel

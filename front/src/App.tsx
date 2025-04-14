@@ -1,10 +1,11 @@
 import { useAtom } from 'jotai'
-import { dateAtom } from './state/state'
-import { ButtonChangeDay } from '@components/ButtonChangeDay'
 import { useEffect, useState } from 'react'
-import { TaskList } from '@components/TaskList'
-import { TaskCreate } from '@components/TaskCreate'
-import { TaskEdit } from '@components/TaskEdit'
+
+import { TaskEdit } from './components/TaskEdit'
+import { dateAtom } from './state/state'
+import { ButtonChangeDay } from '@/components/ButtonChangeDay'
+import { TaskCreate } from '@/components/TaskCreate'
+import { TaskList } from '@/components/TaskList'
 
 export default function App() {
   const [date] = useAtom(dateAtom)

@@ -1,5 +1,6 @@
-import { TaskDateModel, TaskModel } from '@typings/types'
 import { atom } from 'jotai'
+
+import { TaskDateModel, TaskModel } from '@/typings/types'
 
 const today = new Date()
 

@@ -1,4 +1,4 @@
-import { TaskDateModel } from '@typings/types'
+import { TaskDateModel } from '@/typings/types'
 
 export const host = import.meta.env.VITE_HOST
 
