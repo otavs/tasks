@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import express from 'express'
 import nocache from 'nocache'
 import cors from 'cors'
