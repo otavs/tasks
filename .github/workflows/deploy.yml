@@ -6,8 +6,32 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-demo:
+    name: Deploy to demo
     runs-on: ubuntu-latest
+    environment: demo
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          ENV: ${{ vars.ENV }}
+          PORT: ${{ vars.PORT }}
+          DEST_FOLDER: ${{ vars.DEST_FOLDER }}
+          REPO: ${{ github.repository }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_path: .github/scripts/deploy.sh
+          envs: ENV,PORT,DEST_FOLDER,REPO
+
+  deploy-server2:
+    name: Deploy to home
+    runs-on: ubuntu-latest
+    environment: home
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
