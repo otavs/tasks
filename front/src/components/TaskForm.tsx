@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion'
-import { Clock3 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
-import { formatTime, parseTime } from '@/utils/time'
+import { TimeField } from './TimeField'
 
 interface Props {
   heading: string
   subheading?: string
   initialTitle?: string
   initialTime: number
-  /** Focus the time field instead of the title. */
+  /** Focus the time field (with its hour picker open) instead of the title. */
   focusTime?: boolean
   submitLabel: string
   onSubmit: (title: string, time: number) => void
@@ -29,12 +28,10 @@ export function TaskForm({
   onCancel,
 }: Props) {
   const [title, setTitle] = useState(initialTitle)
-  const [timeText, setTimeText] = useState(formatTime(initialTime))
-  const timeInputRef = useRef<HTMLInputElement>(null)
+  const [time, setTime] = useState(initialTime)
 
   const trimmed = title.trim()
-  const time = parseTime(timeText)
-  const isValid = !!trimmed && time !== null
+  const isValid = !!trimmed
 
   return (
     <form
@@ -70,33 +67,7 @@ export function TaskForm({
       />
 
       <div className="mt-4 flex items-center gap-2">
-        <label className="flex items-center gap-1.5 rounded-full border border-field-border bg-field py-1 pr-3 pl-1 shadow-inner shadow-slate-900/5 transition focus-within:border-primary-ring focus-within:ring-4 focus-within:ring-primary-ring/15">
-          <button
-            type="button"
-            aria-label="Pick a time"
-            tabIndex={-1}
-            onClick={() => {
-              try {
-                timeInputRef.current?.showPicker()
-              } catch {
-                timeInputRef.current?.focus()
-              }
-            }}
-            className="grid size-7 cursor-pointer place-items-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink"
-          >
-            <Clock3 className="size-4" strokeWidth={2.5} />
-          </button>
-          <span className="sr-only">Time</span>
-          <input
-            ref={timeInputRef}
-            type="time"
-            required
-            autoFocus={focusTime}
-            value={timeText}
-            onChange={e => setTimeText(e.target.value)}
-            className="w-[4.6rem] bg-transparent font-display text-base font-semibold text-ink outline-none [&::-webkit-calendar-picker-indicator]:hidden"
-          />
-        </label>
+        <TimeField value={time} onChange={setTime} autoOpen={focusTime} />
 
         <div className="ml-auto flex items-center gap-2">
           <button

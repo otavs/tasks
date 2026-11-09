@@ -19,6 +19,7 @@ export function useKeyPress(targetKey: string, callback: () => void, { enabled =
     if (!enabled) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return // already handled (e.g. Esc closing a dropdown)
       if (event.key.toLowerCase() !== targetKey.toLowerCase()) return
       if (event.ctrlKey || event.metaKey || event.altKey || (event.repeat && !repeat)) return
 

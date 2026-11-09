@@ -37,7 +37,7 @@ export function Modal({ isOpen, onClose, labelledBy, children }: ModalProps) {
           />
           <div className="pointer-events-none relative flex min-h-full items-start justify-center p-4 pt-[16vh] sm:pt-[20vh]">
             <motion.div
-              className="pointer-events-auto w-full max-w-md overflow-hidden rounded-3xl border border-sheet-border bg-sheet shadow-2xl shadow-slate-900/20"
+              className="pointer-events-auto w-full max-w-md rounded-3xl border border-sheet-border bg-sheet shadow-2xl shadow-slate-900/20"
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.97, transition: { duration: 0.15 } }}

@@ -8,14 +8,6 @@ export function formatTime(minutes: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
 }
 
-/** Parses "HH:MM" (as given by <input type="time">). */
-export function parseTime(value: string): number | null {
-  const match = /^(\d{1,2}):(\d{2})/.exec(value)
-  if (!match) return null
-  const minutes = Number(match[1]) * 60 + Number(match[2])
-  return minutes >= 0 && minutes < MINUTES_IN_DAY ? minutes : null
-}
-
 /** Display order: by time, then by position. */
 export function sortTasks(tasks: TaskModel[]) {
   return [...tasks].sort((a, b) => a.time - b.time || a.position - b.position)
