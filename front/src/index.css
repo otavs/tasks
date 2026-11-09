@@ -52,8 +52,10 @@
 
   --overdue: #ffe4e6;
   --overdue-border: rgb(225 29 72 / 0.3);
-  --overdue-glow: rgb(244 63 94 / 0.55);
-  --overdue-glow-0: rgb(244 63 94 / 0);
+  --overdue-flow-1: #fecdd3;
+  --overdue-flow-2: rgb(251 113 133 / 0.55);
+  --overdue-flow-3: rgb(236 72 153 / 0.22);
+  --overdue-flow-4: rgb(244 63 94 / 0.25);
   --overdue-badge: #e11d48;
   --overdue-badge-ink: #ffffff;
 }
@@ -103,8 +105,10 @@
 
     --overdue: #3a1520;
     --overdue-border: rgb(251 113 133 / 0.35);
-    --overdue-glow: rgb(251 113 133 / 0.5);
-    --overdue-glow-0: rgb(251 113 133 / 0);
+    --overdue-flow-1: #4d1b2b;
+    --overdue-flow-2: rgb(190 18 60 / 0.45);
+    --overdue-flow-3: rgb(236 72 153 / 0.16);
+    --overdue-flow-4: rgb(244 63 94 / 0.2);
     --overdue-badge: #f43f5e;
     --overdue-badge-ink: #ffffff;
   }
@@ -233,49 +237,63 @@
 
 /* ---------- Overdue tasks ---------- */
 
-/* A red ring that pulses out of the card like a radar ping. `--overdue-delay` staggers it into a wave. */
-.overdue-pulse::after {
+/*
+ * A slow, liquid flow of rose tones behind the card's content: two seamless gradient layers drifting
+ * in opposite directions at different speeds. `--overdue-offset` puts each card at a different phase.
+ * On hover the flow fades out so the usual amber hover shows through.
+ */
+.overdue-flow {
+  isolation: isolate;
+}
+
+.overdue-flow::before {
   content: '';
   position: absolute;
-  inset: -1px;
+  inset: 0;
+  z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  animation: overdue-ping 2.6s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
-  animation-delay: var(--overdue-delay, 0s);
+  background:
+    linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--overdue-flow-3) 22%,
+        transparent 45%,
+        var(--overdue-flow-4) 70%,
+        transparent 100%
+      )
+      0 0 / 300% 100% repeat-x,
+    linear-gradient(
+        90deg,
+        var(--overdue) 0%,
+        var(--overdue-flow-1) 25%,
+        var(--overdue-flow-2) 50%,
+        var(--overdue-flow-1) 75%,
+        var(--overdue) 100%
+      )
+      0 0 / 200% 100% repeat-x;
+  animation: overdue-flow 12s linear infinite;
+  animation-delay: var(--overdue-offset, 0s);
+  transition: opacity 0.25s ease;
 }
 
-@keyframes overdue-ping {
-  0% {
-    box-shadow:
-      0 0 0 0 var(--overdue-glow),
-      inset 0 0 16px -4px var(--overdue-glow);
+/* Shifting by exactly one tile width (-150% of a 300% tile, -200% of a 200% tile) loops seamlessly. */
+@keyframes overdue-flow {
+  from {
+    background-position:
+      0% 0,
+      0% 0;
   }
-  65%,
-  100% {
-    box-shadow:
-      0 0 0 10px var(--overdue-glow-0),
-      inset 0 0 16px -4px var(--overdue-glow-0);
+  to {
+    background-position:
+      150% 0,
+      -200% 0;
   }
 }
 
-/* The time badge gives a little heartbeat in sync with the ring. */
-.overdue-beat {
-  display: inline-block;
-  animation: overdue-beat 2.6s ease-in-out infinite;
-  animation-delay: var(--overdue-delay, 0s);
-}
-
-@keyframes overdue-beat {
-  0%,
-  30%,
-  100% {
-    transform: scale(1);
-  }
-  8% {
-    transform: scale(1.12);
-  }
-  16% {
-    transform: scale(0.97);
+@media (hover: hover) {
+  .overdue-flow:hover::before {
+    opacity: 0;
   }
 }
 
@@ -284,12 +302,7 @@
   .animate-drift-b,
   .animate-drift-c,
   .animate-shimmer,
-  .overdue-beat {
+  .overdue-flow::before {
     animation: none;
-  }
-
-  .overdue-pulse::after {
-    animation: none;
-    box-shadow: 0 0 0 2px var(--overdue-glow);
   }
 }

@@ -87,8 +87,8 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
       style={
         {
           originX: isCompleted ? vortexOrigin : 0.5,
-          // Overdue pulses ripple down the list as a wave instead of all blinking at once.
-          '--overdue-delay': `${index * 0.2}s`,
+          // Each overdue card's background flow starts at a different phase, so they don't move in lockstep.
+          '--overdue-offset': `${index * -2.3}s`,
         } as MotionStyle
       }
       className={cn(
@@ -96,7 +96,7 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
         isDragging
           ? 'border-card-hover-border bg-card-hover shadow-lift'
           : overdue
-            ? 'overdue-pulse border-overdue-border bg-overdue shadow-card hover:border-card-hover-border hover:bg-card-hover'
+            ? 'overdue-flow border-overdue-border bg-overdue shadow-card hover:border-card-hover-border hover:bg-card-hover'
             : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -150,9 +150,7 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
             : 'bg-white/50 text-ink-soft hover:bg-white hover:text-ink dark:bg-white/[0.06] dark:hover:bg-white/15'
         )}
       >
-        <span className={overdue ? 'overdue-beat' : undefined}>
-          <RollingText text={formatTime(task.time)} separatorClassName="opacity-60" />
-        </span>
+        <RollingText text={formatTime(task.time)} separatorClassName="opacity-60" />
       </button>
 
       <div
