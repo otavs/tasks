@@ -35,8 +35,36 @@ async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return
   try {
     await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
+    // Wait (briefly) for it to be active, so a notification shown right away can use it.
+    await Promise.race([navigator.serviceWorker.ready, new Promise(resolve => setTimeout(resolve, 3000))])
   } catch {
     // Desktop browsers can still use `new Notification`.
+  }
+}
+
+/**
+ * Shows a system notification: through the service worker when there is one (Android Chrome requires
+ * it), otherwise with the page-level API.
+ */
+async function showSystemNotification(title: string, options: NotificationOptions) {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration()
+    if (registration?.active) {
+      await registration.showNotification(title, options)
+      return
+    }
+  } catch {
+    // Fall back to the page-level API below.
+  }
+
+  try {
+    const notification = new Notification(title, options)
+    notification.onclick = () => {
+      window.focus()
+      notification.close()
+    }
+  } catch {
+    // Browsers that only allow service worker notifications, and there's none: nothing we can do.
   }
 }
 
@@ -69,38 +97,29 @@ export async function toggleNotifications() {
   await registerServiceWorker()
   store.set(notificationsEnabledAtom, true)
   writePreference(true)
-  toast("Notifications on 🔔 I'll ping you when a task's time comes", { tone: 'success', duration: 4000 })
+
+  // A sample right away: if it doesn't show up, the system (not the app) is holding notifications back.
+  showSystemNotification('Notifications on 🔔', {
+    body: "This is how you'll be pinged when a task's time comes.",
+    icon,
+    tag: 'notifications-test',
+  })
+  toast("Notifications on 🔔 Sent you a test one. Didn't see it? Check your system's notification settings", {
+    tone: 'success',
+    duration: 6000,
+  })
 }
 
 /**
- * A task's time has come. If you're looking at the app, a toast is enough;
- * otherwise (another tab or window) it's a system notification, when enabled.
+ * A task's time has come: a system notification when enabled (even if you're looking at the app,
+ * so it's never missed), plus a toast when the app is on screen.
  */
-export async function notifyTask(task: TaskModel) {
-  const message = `${formatTime(task.time)} · ${task.title}`
-
-  if (document.visibilityState === 'visible' && document.hasFocus()) {
-    toast(`⏰ ${message}`, { duration: 6000 })
-    return
+export function notifyTask(task: TaskModel) {
+  if (document.visibilityState === 'visible') {
+    toast(`⏰ ${formatTime(task.time)} · ${task.title}`, { duration: 6000 })
   }
 
   if (!getDefaultStore().get(notificationsEnabledAtom) || Notification.permission !== 'granted') return
 
-  const options: NotificationOptions = { body: `It's ${formatTime(task.time)} ⏰`, icon, tag: `task-${task.id}` }
-
-  try {
-    const registration = await navigator.serviceWorker?.getRegistration()
-    if (registration) {
-      await registration.showNotification(task.title, options)
-      return
-    }
-  } catch {
-    // Fall back to the page-level API below.
-  }
-
-  const notification = new Notification(task.title, options)
-  notification.onclick = () => {
-    window.focus()
-    notification.close()
-  }
+  showSystemNotification(task.title, { body: `It's ${formatTime(task.time)} ⏰`, icon, tag: `task-${task.id}` })
 }
