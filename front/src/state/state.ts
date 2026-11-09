@@ -1,10 +1,17 @@
 import { atom } from 'jotai'
+import { selectAtom } from 'jotai/utils'
 
 import { TaskDateModel, TaskModel } from '@/typings/types'
-import { dayDiff, todayTaskDate } from '@/utils/date'
+import { dayDiff, isSameDay, toTaskDate, todayTaskDate } from '@/utils/date'
 
-/** The real current day. Kept fresh by the clock so the app survives midnight. */
-export const todayAtom = atom<TaskDateModel>(todayTaskDate())
+/** The current time, refreshed once a minute by `useNowTicker`. The single source of "now". */
+export const nowAtom = atom(new Date())
+
+/** The real current day (only changes at midnight). */
+export const todayAtom = selectAtom(nowAtom, toTaskDate, isSameDay)
+
+/** Minutes since midnight right now. */
+export const nowMinutesAtom = selectAtom(nowAtom, now => now.getHours() * 60 + now.getMinutes())
 
 const viewedDateAtom = atom<TaskDateModel>(todayTaskDate())
 

@@ -1,30 +1,21 @@
-import { useAtom } from 'jotai'
-import { useEffect } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
+import { useEffect, useRef } from 'react'
 
 import { dateAtom, todayAtom } from '@/state/state'
-import { isSameDay, todayTaskDate } from '@/utils/date'
+import { isSameDay } from '@/utils/date'
 
 /**
- * Keeps `todayAtom` correct when the app stays open past midnight (or wakes from sleep).
- * If you were looking at "today", you're carried along to the new day.
+ * When the day changes while the app is open (midnight, or waking from sleep),
+ * carry you along to the new day if you were looking at "today".
  */
 export function useDayRollover() {
-  const [today, setToday] = useAtom(todayAtom)
+  const today = useAtomValue(todayAtom)
   const [date, setDate] = useAtom(dateAtom)
+  const previousToday = useRef(today)
 
   useEffect(() => {
-    const check = () => {
-      const now = todayTaskDate()
-      if (isSameDay(now, today)) return
-      if (isSameDay(date, today)) setDate(now)
-      setToday(now)
-    }
-
-    const interval = setInterval(check, 30_000)
-    document.addEventListener('visibilitychange', check)
-    return () => {
-      clearInterval(interval)
-      document.removeEventListener('visibilitychange', check)
-    }
-  }, [today, date, setToday, setDate])
+    if (isSameDay(previousToday.current, today)) return
+    if (isSameDay(date, previousToday.current)) setDate(today)
+    previousToday.current = today
+  }, [today, date, setDate])
 }

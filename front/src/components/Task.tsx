@@ -1,8 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { TargetAndTransition, motion } from 'framer-motion'
+import { MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
 import { useSetAtom } from 'jotai'
 import { GripVertical, Pencil } from 'lucide-react'
-import { ComponentProps, Ref, useCallback, useRef, useState } from 'react'
+import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RollingText } from './RollingText'
 import { VortexCheck } from './VortexCheck'
@@ -16,12 +16,14 @@ interface Props {
   index: number
   /** True right after a day loads, so the cards cascade in. */
   appear: boolean
+  /** Its time has already passed. */
+  overdue: boolean
   onComplete: (task: TaskModel, checkRect?: DOMRect) => void
   /** Injected by AnimatePresence (popLayout). */
   ref?: Ref<HTMLDivElement>
 }
 
-export function Task({ task, index, appear, onComplete, ref }: Props) {
+export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
   const setIsEditingTask = useSetAtom(isEditingTaskAtom)
   const setTaskEdit = useSetAtom(taskEditAtom)
   const setEditFocus = useSetAtom(editFocusAtom)
@@ -51,6 +53,16 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
     [setNodeRef, ref]
   )
 
+  // When a task becomes overdue while you're looking, its time badge gives a little shake.
+  const [badgeRef, animateBadge] = useAnimate<HTMLButtonElement>()
+  const wasOverdue = useRef(overdue)
+  useEffect(() => {
+    if (overdue && !wasOverdue.current && badgeRef.current) {
+      animateBadge(badgeRef.current, { rotate: [0, -14, 12, -8, 5, 0], scale: [1, 1.25, 1] }, { duration: 0.7 })
+    }
+    wasOverdue.current = overdue
+  }, [overdue, animateBadge, badgeRef])
+
   // Cascade delay only applies to the very first entrance of the card.
   const [mountDelay] = useState(() => (appear ? Math.min(index, 8) * 0.045 : 0))
   const [hasEntered, setHasEntered] = useState(false)
@@ -72,12 +84,20 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
     <motion.div
       ref={setRefs}
       layout
-      style={{ originX: isCompleted ? vortexOrigin : 0.5 }}
+      style={
+        {
+          originX: isCompleted ? vortexOrigin : 0.5,
+          // Overdue pulses ripple down the list as a wave instead of all blinking at once.
+          '--overdue-delay': `${index * 0.2}s`,
+        } as MotionStyle
+      }
       className={cn(
         'group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging
           ? 'border-card-hover-border bg-card-hover shadow-lift'
-          : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
+          : overdue
+            ? 'overdue-pulse border-overdue-border bg-overdue shadow-card hover:border-card-hover-border hover:bg-card-hover'
+            : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{
@@ -117,14 +137,22 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
       </button>
 
       <button
+        ref={badgeRef}
         type="button"
-        aria-label={`Time ${formatTime(task.time)}. Change time`}
-        title="Change time"
+        aria-label={`Time ${formatTime(task.time)}${overdue ? ', overdue' : ''}. Change time`}
+        title={overdue ? 'Overdue · change time' : 'Change time'}
         disabled={isSaving}
         onClick={() => openEdition('time')}
-        className="shrink-0 cursor-pointer rounded-lg bg-white/50 px-1.5 py-0.5 font-display text-sm font-semibold text-ink-soft transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none dark:bg-white/[0.06] dark:hover:bg-white/15"
+        className={cn(
+          'shrink-0 cursor-pointer rounded-lg px-1.5 py-0.5 font-display text-sm font-semibold transition-colors disabled:pointer-events-none',
+          overdue
+            ? 'bg-overdue-badge text-overdue-badge-ink shadow-sm shadow-rose-600/40 hover:brightness-110'
+            : 'bg-white/50 text-ink-soft hover:bg-white hover:text-ink dark:bg-white/[0.06] dark:hover:bg-white/15'
+        )}
       >
-        <RollingText text={formatTime(task.time)} separatorClassName="opacity-60" />
+        <span className={overdue ? 'overdue-beat' : undefined}>
+          <RollingText text={formatTime(task.time)} separatorClassName="opacity-60" />
+        </span>
       </button>
 
       <div

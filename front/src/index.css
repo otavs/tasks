@@ -49,6 +49,13 @@
 
   --check: #15ae97;
   --danger: #e11d48;
+
+  --overdue: #ffe4e6;
+  --overdue-border: rgb(225 29 72 / 0.3);
+  --overdue-glow: rgb(244 63 94 / 0.55);
+  --overdue-glow-0: rgb(244 63 94 / 0);
+  --overdue-badge: #e11d48;
+  --overdue-badge-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -93,6 +100,13 @@
 
     --check: #2dd4bf;
     --danger: #fb7185;
+
+    --overdue: #3a1520;
+    --overdue-border: rgb(251 113 133 / 0.35);
+    --overdue-glow: rgb(251 113 133 / 0.5);
+    --overdue-glow-0: rgb(251 113 133 / 0);
+    --overdue-badge: #f43f5e;
+    --overdue-badge-ink: #ffffff;
   }
 }
 
@@ -126,6 +140,10 @@
   --color-toast-ink: var(--toast-ink);
   --color-check: var(--check);
   --color-danger: var(--danger);
+  --color-overdue: var(--overdue);
+  --color-overdue-border: var(--overdue-border);
+  --color-overdue-badge: var(--overdue-badge);
+  --color-overdue-badge-ink: var(--overdue-badge-ink);
 
   --shadow-card: var(--card-shadow);
   --shadow-lift: var(--card-shadow-lift);
@@ -213,11 +231,65 @@
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* ---------- Overdue tasks ---------- */
+
+/* A red ring that pulses out of the card like a radar ping. `--overdue-delay` staggers it into a wave. */
+.overdue-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: overdue-ping 2.6s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  animation-delay: var(--overdue-delay, 0s);
+}
+
+@keyframes overdue-ping {
+  0% {
+    box-shadow:
+      0 0 0 0 var(--overdue-glow),
+      inset 0 0 16px -4px var(--overdue-glow);
+  }
+  65%,
+  100% {
+    box-shadow:
+      0 0 0 10px var(--overdue-glow-0),
+      inset 0 0 16px -4px var(--overdue-glow-0);
+  }
+}
+
+/* The time badge gives a little heartbeat in sync with the ring. */
+.overdue-beat {
+  display: inline-block;
+  animation: overdue-beat 2.6s ease-in-out infinite;
+  animation-delay: var(--overdue-delay, 0s);
+}
+
+@keyframes overdue-beat {
+  0%,
+  30%,
+  100% {
+    transform: scale(1);
+  }
+  8% {
+    transform: scale(1.12);
+  }
+  16% {
+    transform: scale(0.97);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-drift-a,
   .animate-drift-b,
   .animate-drift-c,
-  .animate-shimmer {
+  .animate-shimmer,
+  .overdue-beat {
     animation: none;
+  }
+
+  .overdue-pulse::after {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--overdue-glow);
   }
 }

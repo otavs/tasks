@@ -25,7 +25,7 @@ import { useDeleteTaskMutation } from '@/api/tasks/delete'
 import { tasksQueryOptions, useListTasksQuery } from '@/api/tasks/list'
 import { useMoveTaskMutation } from '@/api/tasks/move'
 import { useReorderTaskMutation } from '@/api/tasks/reorder'
-import { dateAtom, dayDirectionAtom, isDraggingTaskAtom, todayAtom } from '@/state/state'
+import { dateAtom, dayDirectionAtom, isDraggingTaskAtom, nowMinutesAtom, todayAtom } from '@/state/state'
 import { toast } from '@/state/toast'
 import { TaskModel } from '@/typings/types'
 import { celebrate, celebrateBig } from '@/utils/confetti'
@@ -36,6 +36,7 @@ import { formatTime, inferTime } from '@/utils/time'
 export function TaskList() {
   const date = useAtomValue(dateAtom)
   const today = useAtomValue(todayAtom)
+  const nowMinutes = useAtomValue(nowMinutesAtom)
   const direction = useAtomValue(dayDirectionAtom)
   const setIsDraggingTask = useSetAtom(isDraggingTaskAtom)
   const queryClient = useQueryClient()
@@ -112,7 +113,14 @@ export function TaskList() {
             <SortableContext items={tasks.map(task => task.uid)} strategy={verticalListSortingStrategy}>
               <AnimatePresence mode="popLayout">
                 {tasks.map((task, index) => (
-                  <Task key={task.uid} task={task} index={index} appear={appear} onComplete={handleComplete} />
+                  <Task
+                    key={task.uid}
+                    task={task}
+                    index={index}
+                    appear={appear}
+                    overdue={isOverdue(task)}
+                    onComplete={handleComplete}
+                  />
                 ))}
               </AnimatePresence>
             </SortableContext>
@@ -125,6 +133,12 @@ export function TaskList() {
       </div>
     </DndContext>
   )
+
+  /** Past days are all overdue; today, a task is overdue once its minute has gone by. */
+  function isOverdue(task: TaskModel) {
+    const daysFromToday = dayDiff(today, date)
+    return daysFromToday < 0 || (daysFromToday === 0 && task.time < nowMinutes)
+  }
 
   function handleDragStart({ activatorEvent }: DragStartEvent) {
     dragStartXRef.current = clientX(activatorEvent)
