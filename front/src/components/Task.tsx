@@ -220,14 +220,17 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
     const card = cardRef.current
     const impact = checkRect && { x: checkRect.left + checkRect.width / 2, y: checkRect.top + checkRect.height / 2 }
 
-    // The card breaks like glass from the check; its shards replace it right away.
+    setIsCompleted(true)
+
+    // The card breaks like glass from the check; its shards replace it right away. The rest (list
+    // update, confetti) waits for the shards' first frame, so their flight starts without a hitch.
     if (card && shatter(card, impact)) {
       card.style.opacity = '0'
       setIsShattered(true)
+      requestAnimationFrame(() => setTimeout(() => onComplete(task, checkRect)))
+    } else {
+      onComplete(task, checkRect)
     }
-
-    setIsCompleted(true)
-    onComplete(task, checkRect)
   }
 
   function openEdition() {
