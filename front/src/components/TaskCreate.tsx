@@ -5,9 +5,11 @@ import { Plus } from 'lucide-react'
 import { Modal } from './Modal'
 import { TASK_FORM_HEADING_ID, TaskForm } from './TaskForm'
 import { useCreateTaskMutation } from '@/api/tasks/create'
+import { useListTasksQuery } from '@/api/tasks/list'
 import { useKeyPress } from '@/hooks/useKeyPress'
 import { dateAtom, isAnyModalOpenAtom, isCreatingTaskAtom, todayAtom } from '@/state/state'
-import { formDateLabel } from '@/utils/date'
+import { formDateLabel, isSameDay } from '@/utils/date'
+import { suggestTime } from '@/utils/time'
 
 export function TaskCreate() {
   const date = useAtomValue(dateAtom)
@@ -15,6 +17,7 @@ export function TaskCreate() {
   const [isOpen, setIsOpen] = useAtom(isCreatingTaskAtom)
   const isAnyModalOpen = useAtomValue(isAnyModalOpenAtom)
   const createTask = useCreateTaskMutation()
+  const { data: tasks } = useListTasksQuery()
 
   useKeyPress('n', () => setIsOpen(true), { enabled: !isAnyModalOpen })
 
@@ -39,10 +42,11 @@ export function TaskCreate() {
         <TaskForm
           heading="New task"
           subheading={formDateLabel(date, today)}
+          initialTime={suggestTime(tasks, isSameDay(date, today))}
           submitLabel="Add"
           onCancel={() => setIsOpen(false)}
-          onSubmit={title => {
-            createTask.mutate({ title, date })
+          onSubmit={(title, time) => {
+            createTask.mutate({ title, date, time })
             setIsOpen(false)
           }}
         />

@@ -3,11 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { request, taskListKey } from '../api'
 import { newUid } from './list'
 import { TaskDateModel, TaskModel } from '@/typings/types'
+import { resequence } from '@/utils/time'
 
 type Payload = {
   title: string
   date: TaskDateModel
-  /** Insert at this index instead of appending (used by "undo"). */
+  time: number
+  /** Put back at this index instead of the end of its time group (used by "undo"). */
   position?: number
 }
 
@@ -24,11 +26,10 @@ export const useCreateTaskMutation = () => {
       const uid = newUid()
 
       queryClient.setQueryData<TaskModel[]>(queryKey, (old = []) => {
-        const index = Math.min(newTask.position ?? old.length, old.length)
-        const optimisticTask: TaskModel = { id: -1, uid, title: newTask.title, date: newTask.date, position: index }
+        const optimisticTask: TaskModel = { id: -1, uid, ...newTask, position: old.length }
         const next = [...old]
-        next.splice(index, 0, optimisticTask)
-        return next.map((task, position) => ({ ...task, position }))
+        next.splice(Math.min(newTask.position ?? old.length, old.length), 0, optimisticTask)
+        return resequence(next)
       })
 
       return { uid, queryKey }

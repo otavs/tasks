@@ -4,6 +4,7 @@
     "dev": "node --no-warnings --watch-path=src src/index.ts",
     "start": "node --env-file=.env src/index.ts",
     "generate": "prisma generate",
+    "postinstall": "prisma generate",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy"
   },

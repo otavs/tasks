@@ -3,13 +3,14 @@ import { useAtom, useAtomValue } from 'jotai'
 import { Modal } from './Modal'
 import { TASK_FORM_HEADING_ID, TaskForm } from './TaskForm'
 import { useUpdateTaskMutation } from '@/api/tasks/update'
-import { dateAtom, isEditingTaskAtom, taskEditAtom, todayAtom } from '@/state/state'
+import { dateAtom, editFocusAtom, isEditingTaskAtom, taskEditAtom, todayAtom } from '@/state/state'
 import { formDateLabel } from '@/utils/date'
 
 export function TaskEdit() {
   const updateTask = useUpdateTaskMutation()
   const date = useAtomValue(dateAtom)
   const today = useAtomValue(todayAtom)
+  const focus = useAtomValue(editFocusAtom)
 
   const [isEditingTask, setIsEditingTask] = useAtom(isEditingTaskAtom)
   const [taskEdit] = useAtom(taskEditAtom)
@@ -24,10 +25,20 @@ export function TaskEdit() {
           heading="Edit task"
           subheading={formDateLabel(date, today)}
           initialTitle={taskEdit.title}
+          initialTime={taskEdit.time}
+          focusTime={focus === 'time'}
           submitLabel="Save"
           onCancel={close}
-          onSubmit={title => {
-            if (title !== taskEdit.title) updateTask.mutate({ id: taskEdit.id, title })
+          onSubmit={(title, time) => {
+            const titleChanged = title !== taskEdit.title
+            const timeChanged = time !== taskEdit.time
+            if (titleChanged || timeChanged) {
+              updateTask.mutate({
+                id: taskEdit.id,
+                ...(titleChanged && { title }),
+                ...(timeChanged && { time }),
+              })
+            }
             close()
           }}
         />

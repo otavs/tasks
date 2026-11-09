@@ -4,10 +4,12 @@ import { useSetAtom } from 'jotai'
 import { GripVertical, Pencil } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useRef, useState } from 'react'
 
+import { RollingText } from './RollingText'
 import { VortexCheck } from './VortexCheck'
-import { isEditingTaskAtom, taskEditAtom } from '@/state/state'
+import { editFocusAtom, isEditingTaskAtom, taskEditAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
 import { cn } from '@/utils/cn'
+import { formatTime } from '@/utils/time'
 
 interface Props {
   task: TaskModel
@@ -22,6 +24,7 @@ interface Props {
 export function Task({ task, index, appear, onComplete, ref }: Props) {
   const setIsEditingTask = useSetAtom(isEditingTaskAtom)
   const setTaskEdit = useSetAtom(taskEditAtom)
+  const setEditFocus = useSetAtom(editFocusAtom)
 
   const [isCompleted, setIsCompleted] = useState(false)
   const [isCheckHovered, setIsCheckHovered] = useState(false)
@@ -113,15 +116,26 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
         <GripVertical className="size-4" strokeWidth={2.5} />
       </button>
 
+      <button
+        type="button"
+        aria-label={`Time ${formatTime(task.time)}. Change time`}
+        title="Change time"
+        disabled={isSaving}
+        onClick={() => openEdition('time')}
+        className="shrink-0 cursor-pointer rounded-lg bg-white/50 px-1.5 py-0.5 font-display text-sm font-semibold text-ink-soft transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none dark:bg-white/[0.06] dark:hover:bg-white/15"
+      >
+        <RollingText text={formatTime(task.time)} separatorClassName="opacity-60" />
+      </button>
+
       <div
-        className="min-w-0 flex-1 py-1 text-[15px] leading-snug font-semibold break-words"
-        onDoubleClick={openEdition}
+        className="min-w-0 flex-1 py-1 pl-0.5 text-[15px] leading-snug font-semibold break-words"
+        onDoubleClick={() => openEdition()}
       >
         {task.title}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
-        <IconButton label="Edit task" title="Edit" onClick={openEdition} disabled={isSaving}>
+        <IconButton label="Edit task" title="Edit" onClick={() => openEdition()} disabled={isSaving}>
           <Pencil className="size-[18px]" strokeWidth={2.25} />
         </IconButton>
         <button
@@ -155,9 +169,10 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
     onComplete(task, checkRect)
   }
 
-  function openEdition() {
+  function openEdition(focus: 'title' | 'time' = 'title') {
     if (isSaving) return
     setTaskEdit(task)
+    setEditFocus(focus)
     setIsEditingTask(true)
   }
 }

@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai'
 import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskDateModel, TaskModel } from '@/typings/types'
+import { sortTasks } from '@/utils/time'
 
 export const newUid = () => -Math.floor(Math.random() * 1_000_000_000)
 
@@ -19,7 +20,7 @@ export const tasksQueryOptions = (date: TaskDateModel, queryClient: QueryClient)
         task.uid = prevTasks?.find(prevTask => prevTask.id === task.id)?.uid ?? newUid()
       })
 
-      return tasks.sort((a, b) => a.position - b.position)
+      return sortTasks(tasks)
     },
     refetchInterval: 15000,
   })

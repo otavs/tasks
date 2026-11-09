@@ -26,6 +26,8 @@ export const isCreatingTaskAtom = atom(false)
 
 export const taskEditAtom = atom<TaskModel>()
 export const isEditingTaskAtom = atom(false)
+/** Which field the edit form should focus (clicking a card's time focuses the time). */
+export const editFocusAtom = atom<'title' | 'time'>('title')
 
 export const isDraggingTaskAtom = atom(false)
 

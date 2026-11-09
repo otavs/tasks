@@ -1,13 +1,24 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
+import { isValidTime, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
 
 export const updateTask = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
-  const { title } = req.body
+  const { title, time } = req.body
   const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
-  if (!trimmedTitle) {
-    res.status(400).json({ error: 'Title is required' })
+  if (title === undefined && time === undefined) {
+    res.status(400).json({ error: 'title or time is required' })
+    return
+  }
+
+  if (title !== undefined && !trimmedTitle) {
+    res.status(400).json({ error: 'Title cannot be empty' })
+    return
+  }
+
+  if (time !== undefined && !isValidTime(time)) {
+    res.status(400).json({ error: 'time must be an integer number of minutes between 0 and 1439' })
     return
   }
 
@@ -19,9 +30,18 @@ export const updateTask = async (req: Request, res: Response) => {
       return
     }
 
-    const updatedTask = await prisma.task.update({
-      where: { id },
-      data: { title: trimmedTitle },
+    const updatedTask = await prisma.$transaction(async (tx) => {
+      await tx.task.update({
+        where: { id },
+        data: { ...(title !== undefined && { title: trimmedTitle }), ...(time !== undefined && { time }) },
+      })
+
+      // A new time moves the task to the end of its new time group.
+      if (time !== undefined && time !== task.time) {
+        await resequenceDay(tx, task, placeLast(id))
+      }
+
+      return tx.task.findUniqueOrThrow({ where: { id } })
     })
 
     res.json(updatedTask)

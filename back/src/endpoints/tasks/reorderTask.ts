@@ -1,45 +1,38 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
+import { isValidTime, placeAt, resequenceDay } from '../../utils/taskOrder.ts'
 
+/**
+ * Moves a task to another index within its day. The client sends the time the task should
+ * have at the new spot (inferred when the old one would break the time order).
+ */
 export const reorderTask = async (req: Request, res: Response) => {
-  const { id, newPosition } = req.body
+  const { id, newPosition, time } = req.body
 
-  if (id === undefined || newPosition === undefined) {
-    res.status(400).json({ error: 'id and newPosition are required' })
+  if (id === undefined || !Number.isInteger(newPosition) || newPosition < 0) {
+    res.status(400).json({ error: 'id and a non-negative integer newPosition are required' })
+    return
+  }
+
+  if (time !== undefined && !isValidTime(time)) {
+    res.status(400).json({ error: 'time must be an integer number of minutes between 0 and 1439' })
     return
   }
 
   try {
-    const task = await prisma.task.findFirst({
-      where: { id: Number(id) },
-    })
+    const task = await prisma.task.findUnique({ where: { id: Number(id) } })
 
     if (!task) {
       res.status(404).json({ error: 'Task not found' })
       return
     }
 
-    const { day, month, year } = task
-    const oldIndex = task.position
-    const newIndex = Number(newPosition)
-
     await prisma.$transaction(async (tx) => {
-      if (oldIndex < newIndex) {
-        await tx.task.updateMany({
-          where: { position: { gt: oldIndex, lte: newIndex }, day, month, year },
-          data: { position: { decrement: 1 } },
-        })
-      } else {
-        await tx.task.updateMany({
-          where: { position: { gte: newIndex, lt: oldIndex }, day, month, year },
-          data: { position: { increment: 1 } },
-        })
+      if (time !== undefined && time !== task.time) {
+        await tx.task.update({ where: { id: task.id }, data: { time } })
       }
 
-      await tx.task.update({
-        where: { id: task.id },
-        data: { position: newIndex },
-      })
+      await resequenceDay(tx, task, placeAt(task.id, newPosition))
     })
 
     res.json({ message: 'Task reordered successfully' })

@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai'
 import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskDateModel, TaskModel } from '@/typings/types'
+import { resequence } from '@/utils/time'
 
 type Payload = {
   id: number
@@ -27,13 +28,14 @@ export const useMoveTaskMutation = () => {
 
       queryClient.setQueryData<TaskModel[]>(queryKey, (prev = []) => prev.filter(task => task.id !== id))
 
-      // If we already have the target day cached (prefetched neighbour), show the task there right away.
+      // If we already have the target day cached (prefetched neighbour), show the task there right away,
+      // at the end of its time group like the backend does.
       const targetTasks = queryClient.getQueryData<TaskModel[]>(targetKey)
       if (targetTasks) {
-        queryClient.setQueryData<TaskModel[]>(targetKey, [
-          ...targetTasks,
-          { ...movedTask, date, position: targetTasks.length },
-        ])
+        queryClient.setQueryData<TaskModel[]>(
+          targetKey,
+          resequence([...targetTasks, { ...movedTask, date, position: targetTasks.length }])
+        )
       }
 
       return { movedTask, index, queryKey, targetKey }

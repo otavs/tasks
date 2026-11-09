@@ -8,6 +8,8 @@ export type TaskModel = {
   id: number
   title: string
   date?: TaskDateModel
+  /** Minutes since midnight (0..1439). */
+  time: number
   position: number
   uid: number
 }

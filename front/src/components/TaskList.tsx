@@ -1,23 +1,21 @@
 import {
-  ClientRect,
   CollisionDetection,
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
   closestCenter,
-  pointerWithin,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { Coordinates } from '@dnd-kit/core/dist/types'
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { RotateCw } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DropMove } from './DropMove'
 import { EmptyState } from './EmptyState'
@@ -33,6 +31,7 @@ import { TaskModel } from '@/typings/types'
 import { celebrate, celebrateBig } from '@/utils/confetti'
 import { dateKey, dayDiff, relativeDayLabel, shiftDate, shortDayLabel } from '@/utils/date'
 import { restrictToParentElementY } from '@/utils/restrictToParentElementY'
+import { formatTime, inferTime } from '@/utils/time'
 
 export function TaskList() {
   const date = useAtomValue(dateAtom)
@@ -53,6 +52,9 @@ export function TaskList() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     useSensor(TouchSensor)
   )
+
+  const dragStartXRef = useRef<number | null>(null)
+  const collisionDetection = useMemo(() => dayZoneCollisionDetection(dragStartXRef), [])
 
   // Prefetch the neighbouring days so flipping through them feels instant.
   useEffect(() => {
@@ -88,10 +90,10 @@ export function TaskList() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={customCollisionDetection}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setIsDraggingTask(false)}
+      onDragCancel={handleDragCancel}
       modifiers={[restrictToParentElementY]}
     >
       <div className="relative flex justify-evenly gap-2">
@@ -124,12 +126,18 @@ export function TaskList() {
     </DndContext>
   )
 
-  function handleDragStart() {
+  function handleDragStart({ activatorEvent }: DragStartEvent) {
+    dragStartXRef.current = clientX(activatorEvent)
     setIsDraggingTask(true)
   }
 
-  function handleDragEnd({ active, over }: DragEndEvent) {
+  function handleDragCancel() {
+    dragStartXRef.current = null
     setIsDraggingTask(false)
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    handleDragCancel()
 
     if (!over || active.id === over.id || !tasks) return
 
@@ -139,10 +147,17 @@ export function TaskList() {
     if (over.id === 'moveToPrevious') return handleMoveTask(movedTask, -1)
     if (over.id === 'moveToNext') return handleMoveTask(movedTask, 1)
 
+    const oldIndex = tasks.indexOf(movedTask)
     const newIndex = tasks.findIndex(task => task.uid === over.id)
     if (newIndex === -1) return
 
-    reorderTask.mutate({ id: movedTask.id, newPosition: newIndex })
+    // The list is always ordered by time: if the new spot breaks that, give the task a time that fits.
+    const reordered = arrayMove(tasks, oldIndex, newIndex)
+    const time = inferTime(movedTask.time, reordered[newIndex - 1]?.time, reordered[newIndex + 1]?.time)
+
+    reorderTask.mutate({ id: movedTask.id, newPosition: newIndex, time })
+
+    if (time !== movedTask.time) toast(`Rescheduled to ${formatTime(time)} 🕑`)
   }
 
   function handleComplete(task: TaskModel, checkRect?: DOMRect) {
@@ -163,7 +178,7 @@ export function TaskList() {
       duration: 5000,
       action: {
         label: 'Undo',
-        run: () => createTask.mutate({ title: task.title, date: taskDate, position: index }),
+        run: () => createTask.mutate({ title: task.title, date: taskDate, time: task.time, position: index }),
       },
     })
   }
@@ -204,21 +219,37 @@ function LoadingSkeleton() {
   )
 }
 
-const customCollisionDetection: CollisionDetection = args => {
-  if (isInside('moveToPrevious') || isInside('moveToNext')) {
-    return pointerWithin(args)
-  }
+const DAY_ZONES = ['moveToPrevious', 'moveToNext']
+const DAY_ZONE_THRESHOLD = 24
 
-  return closestCenter(args)
+/**
+ * Reordering targets the closest card. A day zone only wins after a clear horizontal drag towards it,
+ * and its hit area extends to the edge of the screen. On phones the zones overlay the list edges, right
+ * where the grip handle is, so a plain vertical drag must never count as "move to another day".
+ */
+function dayZoneCollisionDetection(dragStartX: RefObject<number | null>): CollisionDetection {
+  return args => {
+    const pointer = args.pointerCoordinates
+    const startX = dragStartX.current
 
-  function isInside(id: string) {
-    if (!args.pointerCoordinates) return false
-    const rect = args.droppableRects.get(id)
-    if (!rect) return false
-    return isPointerInside(args.pointerCoordinates, rect)
-  }
+    if (pointer && startX !== null) {
+      const dx = pointer.x - startX
+      const previous = args.droppableRects.get('moveToPrevious')
+      const next = args.droppableRects.get('moveToNext')
 
-  function isPointerInside({ x, y }: Coordinates, { top, left, right, bottom }: ClientRect) {
-    return x >= left && x <= right && y >= top && y <= bottom
+      if (previous && dx < -DAY_ZONE_THRESHOLD && pointer.x <= previous.right) return [{ id: 'moveToPrevious' }]
+      if (next && dx > DAY_ZONE_THRESHOLD && pointer.x >= next.left) return [{ id: 'moveToNext' }]
+    }
+
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter(container => !DAY_ZONES.includes(String(container.id))),
+    })
   }
+}
+
+function clientX(event: Event | null) {
+  if (event instanceof MouseEvent) return event.clientX // includes PointerEvent
+  if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent) return event.touches[0]?.clientX ?? null
+  return null // keyboard dragging never reaches the day zones
 }

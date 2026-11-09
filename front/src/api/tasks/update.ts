@@ -4,10 +4,12 @@ import { useAtomValue } from 'jotai'
 import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
+import { resequence } from '@/utils/time'
 
 type Payload = {
   id: number
-  title: string
+  title?: string
+  time?: number
 }
 
 export const useUpdateTaskMutation = () => {
@@ -15,27 +17,32 @@ export const useUpdateTaskMutation = () => {
   const date = useAtomValue(dateAtom)
 
   return useMutation({
-    onMutate: async ({ id, title }: Payload) => {
+    onMutate: async ({ id, title, time }: Payload) => {
       const queryKey = taskListKey(date)
       await queryClient.cancelQueries({ queryKey })
 
-      const task = queryClient.getQueryData<TaskModel[]>(queryKey)?.find(task => task.id === id)
+      const prevTasks = queryClient.getQueryData<TaskModel[]>(queryKey) ?? []
+      const task = prevTasks.find(task => task.id === id)
       if (!task) throw new Error('Task not found')
 
-      queryClient.setQueryData<TaskModel[]>(queryKey, (prev = []) =>
-        prev.map(task => (task.id === id ? { ...task, title } : task))
+      const updated = { ...task, title: title ?? task.title, time: time ?? task.time }
+      const timeChanged = updated.time !== task.time
+
+      queryClient.setQueryData<TaskModel[]>(queryKey, (tasks = []) =>
+        timeChanged
+          ? // Like the backend: a new time sends the task to the end of its new time group.
+            resequence([...tasks.filter(t => t.id !== id), updated])
+          : tasks.map(t => (t.id === id ? updated : t))
       )
 
-      return { task, queryKey }
+      return { prevTasks, queryKey }
     },
 
-    mutationFn: ({ id, title }: Payload) => request<TaskModel>(`/tasks/${id}`, { method: 'PUT', json: { title } }),
+    mutationFn: ({ id, ...changes }: Payload) => request<TaskModel>(`/tasks/${id}`, { method: 'PUT', json: changes }),
 
     onError: (_error, _variables, context) => {
       if (!context) return
-      queryClient.setQueryData<TaskModel[]>(context.queryKey, (prev = []) =>
-        prev.map(task => (task.id === context.task.id ? { ...task, title: context.task.title } : task))
-      )
+      queryClient.setQueryData(context.queryKey, context.prevTasks)
     },
   })
 }
