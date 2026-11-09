@@ -5,7 +5,7 @@ export const reorderTask = async (req: Request, res: Response) => {
   const { id, newPosition } = req.body
 
   if (id === undefined || newPosition === undefined) {
-    res.status(400).json({ error: 'newPosition, day, month, and year are required' })
+    res.status(400).json({ error: 'id and newPosition are required' })
     return
   }
 

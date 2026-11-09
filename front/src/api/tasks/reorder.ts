@@ -1,10 +1,10 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { produce } from 'immer'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 
-import { host, taskListKey } from '../api'
+import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 type Payload = {
   id: number
@@ -13,44 +13,36 @@ type Payload = {
 
 export const useReorderTaskMutation = () => {
   const queryClient = useQueryClient()
-  const [date] = useAtom(dateAtom)
-  const queryKey = taskListKey(date)
+  const date = useAtomValue(dateAtom)
 
   return useMutation({
     onMutate: async ({ id, newPosition }: Payload) => {
+      const queryKey = taskListKey(date)
       await queryClient.cancelQueries({ queryKey })
 
-      const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
+      const prevTasks = queryClient.getQueryData<TaskModel[]>(queryKey)
 
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[] = []) =>
-        produce(prevTasks, newTasks => {
-          const currentIndex = newTasks.findIndex(task => task.id === id)
+      queryClient.setQueryData<TaskModel[]>(queryKey, (tasks = []) =>
+        produce(tasks, draft => {
+          const currentIndex = draft.findIndex(task => task.id === id)
           if (currentIndex === -1) return
 
-          const [reorderedTask] = newTasks.splice(currentIndex, 1)
-          newTasks.splice(newPosition, 0, reorderedTask)
-          newTasks.forEach((task, index) => {
+          const [reorderedTask] = draft.splice(currentIndex, 1)
+          draft.splice(newPosition, 0, reorderedTask)
+          draft.forEach((task, index) => {
             task.position = index
           })
         })
       )
 
-      return { prevTasks: tasks }
+      return { prevTasks, queryKey }
     },
 
-    mutationFn: async (payload: { id: number; newPosition: number }) => {
-      const res = await fetch(`${host}/tasks/reorder`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw (await res.json()).message
-      return res.json()
-    },
+    mutationFn: (payload: Payload) => request('/tasks/reorder', { method: 'PUT', json: payload }),
 
     onError: (_error, _variables, context) => {
       if (!context?.prevTasks) return
-      queryClient.setQueryData(queryKey, () => context.prevTasks)
+      queryClient.setQueryData(context.queryKey, context.prevTasks)
     },
   })
 }

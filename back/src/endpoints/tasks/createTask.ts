@@ -2,24 +2,37 @@ import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
 
 export const createTask = async (req: Request, res: Response) => {
-  const { title, date = {} } = req.body
+  const { title, date = {}, position } = req.body
   const { day, month, year } = date
+  const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
-  if (!title || day === undefined || month === undefined || year === undefined) {
+  if (!trimmedTitle || day === undefined || month === undefined || year === undefined) {
     res.status(400).json({ error: 'title, date.day, date.month, and date.year are required' })
     return
   }
 
+  if (position !== undefined && (!Number.isInteger(position) || position < 0)) {
+    res.status(400).json({ error: 'position must be a non-negative integer' })
+    return
+  }
+
   try {
-    const lastTask = await prisma.task.findFirst({
-      where: { day, month, year },
-      orderBy: { position: 'desc' },
-    })
+    const newTask = await prisma.$transaction(async (tx) => {
+      const count = await tx.task.count({ where: { day, month, year } })
 
-    const newPosition = lastTask ? lastTask.position + 1 : 0
+      // Without a position the task goes to the end; with one (e.g. "undo") it's inserted there.
+      const newPosition = position === undefined ? count : Math.min(position, count)
 
-    const newTask = await prisma.task.create({
-      data: { title, position: newPosition, day, month, year },
+      if (newPosition < count) {
+        await tx.task.updateMany({
+          where: { position: { gte: newPosition }, day, month, year },
+          data: { position: { increment: 1 } },
+        })
+      }
+
+      return tx.task.create({
+        data: { title: trimmedTitle, position: newPosition, day, month, year },
+      })
     })
 
     res.status(201).json(newTask)

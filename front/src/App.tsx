@@ -1,63 +1,32 @@
-import { useAtom } from 'jotai'
-import { useEffect, useState } from 'react'
+import { MotionConfig } from 'framer-motion'
 
-import { TaskEdit } from './components/TaskEdit'
-import { dateAtom } from './state/state'
-import { ButtonChangeDay } from '@/components/ButtonChangeDay'
+import { Background } from '@/components/Background'
+import { Confetti } from '@/components/Confetti'
+import { Header } from '@/components/Header'
+import { ShortcutsHint } from '@/components/ShortcutsHint'
 import { TaskCreate } from '@/components/TaskCreate'
+import { TaskEdit } from '@/components/TaskEdit'
 import { TaskList } from '@/components/TaskList'
+import { Toaster } from '@/components/Toaster'
+import { useDayRollover } from '@/hooks/useDayRollover'
 
 export default function App() {
-  const [date] = useAtom(dateAtom)
+  useDayRollover()
 
   return (
-    <>
-      <div className="my-3 flex items-center justify-around">
-        <ButtonChangeDay inc={-1} />
-        <div>
-          <div className="flex justify-center text-2xl">{dateFormatted()}</div>
-          <Time />
-        </div>
-        <ButtonChangeDay inc={1} />
-      </div>
-      <TaskList />
-      <TaskCreate />
+    <MotionConfig reducedMotion="user">
+      <Background />
+
+      <main className="mx-auto w-full max-w-5xl px-3 pb-28 sm:px-6">
+        <Header />
+        <TaskList />
+        <TaskCreate />
+        <ShortcutsHint />
+      </main>
+
       <TaskEdit />
-    </>
+      <Toaster />
+      <Confetti />
+    </MotionConfig>
   )
-
-  function isCurrentDate() {
-    const today = new Date()
-    return date.day == today.getDate() && date.month == today.getMonth() + 1 && date.year == today.getFullYear()
-  }
-
-  function Time() {
-    const [time, setTime] = useState(new Date())
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setTime(new Date())
-      }, 1000)
-
-      return () => clearInterval(interval)
-    }, [])
-
-    return <div className="flex justify-center text-2xl">{isCurrentDate() ? timeFormatted() : `-`}</div>
-
-    function timeFormatted() {
-      const hours = String(time.getHours()).padStart(2, '0')
-      const minutes = String(time.getMinutes()).padStart(2, '0')
-      const seconds = String(time.getSeconds()).padStart(2, '0')
-
-      return `${hours} : ${minutes} : ${seconds}`
-    }
-  }
-
-  function dateFormatted() {
-    return `${padZero(date.day, 2)} - ${padZero(date.month, 2)} - ${date.year}`
-  }
-
-  function padZero(n: number, digits: number) {
-    return n.toString().padStart(digits, '0')
-  }
 }

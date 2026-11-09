@@ -1,131 +1,182 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { motion } from 'framer-motion'
-import { useAtom } from 'jotai'
-import { useState } from 'react'
-import Fireworks from 'react-canvas-confetti/dist/presets/fireworks/index'
-import { TCanvasConfettiAnimationOptions } from 'react-canvas-confetti/dist/types'
-import { MdEdit } from 'react-icons/md'
-import { RiDragMoveFill } from 'react-icons/ri'
-import CircleLoader from 'react-spinners/CircleLoader'
+import { TargetAndTransition, motion } from 'framer-motion'
+import { useSetAtom } from 'jotai'
+import { Move, Pencil } from 'lucide-react'
+import { ComponentProps, Ref, useCallback, useRef, useState } from 'react'
 
 import { VortexCheck } from './VortexCheck'
-import { draggingTaskIdAtom, isEditingTaskAtom, taskEditAtom } from '@/state/state'
+import { isEditingTaskAtom, taskEditAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
+import { cn } from '@/utils/cn'
 
 interface Props {
   task: TaskModel
-  onDelete: (taskId: number) => void
+  index: number
+  /** True right after a day loads, so the cards cascade in. */
+  appear: boolean
+  onComplete: (task: TaskModel, checkRect?: DOMRect) => void
+  /** Injected by AnimatePresence (popLayout). */
+  ref?: Ref<HTMLDivElement>
 }
 
-const initialStyles = {
-  x: 0,
-  y: 0,
-  scale: 1,
-}
+export function Task({ task, index, appear, onComplete, ref }: Props) {
+  const setIsEditingTask = useSetAtom(isEditingTaskAtom)
+  const setTaskEdit = useSetAtom(taskEditAtom)
 
-export function Task({ task, onDelete }: Props) {
-  const [draggingTaskId] = useAtom(draggingTaskIdAtom)
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [isCheckHovered, setIsCheckHovered] = useState(false)
+  const [vortexOrigin, setVortexOrigin] = useState(0.5)
 
-  const [, setIsEditingTask] = useAtom(isEditingTaskAtom)
-  const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
-
-  const [isDeleted, setIsDeleted] = useState(false)
+  const isSaving = task.id === -1
 
   const { attributes, setNodeRef, listeners, transform, isDragging } = useSortable({
     id: task.uid,
     transition: null,
+    disabled: isSaving,
   })
 
-  const [playConfetti, setPlayConfetti] = useState(false)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const checkRef = useRef<HTMLButtonElement>(null)
 
-  return (
-    <>
-      <motion.div
-        ref={setNodeRef}
-        className={`m-2 flex w-[100%] items-center justify-between rounded border ${draggingTaskId !== task.id ? 'bg-blue-200' : 'bg-amber-100'} p-2 hover:bg-amber-100`}
-        layoutId={String(task.uid)}
-        layout
-        initial={{ opacity: 1, y: -10 }}
-        animate={
-          transform
-            ? {
-                x: transform.x,
-                y: transform.y,
-                scale: isDragging ? 1.05 : 1,
-                zIndex: isDragging ? 2 : 0,
-                boxShadow: isDragging
-                  ? '0 0 0 1px rgba(63, 63, 68, 0.05), 0px 15px 15px 0 rgba(34, 33, 81, 0.25)'
-                  : undefined,
-              }
-            : initialStyles
-        }
-        exit={
-          isDeleted
-            ? {
-                opacity: 0.5,
-                rotate: -2000,
-                scale: 0,
-                transition: {
-                  duration: 1.6,
-                  ease: 'easeOut',
-                },
-              }
-            : {}
-        }
-        transition={{
-          duration: !isDragging ? 0.25 : 0,
-          easings: {
-            type: 'spring',
-          },
-          scale: {
-            duration: 0.25,
-          },
-          zIndex: {
-            delay: isDragging ? 0 : 0.25,
-          },
-        }}
-      >
-        <div className="m-1 break-words">{task.title}</div>
-        <div className="align-center flex justify-center gap-1">
-          {task.id != -1 ? (
-            <>
-              <button className="min-w-5 cursor-pointer hover:text-amber-700" onClick={openEdition}>
-                <MdEdit className="text-2xl" />
-              </button>
-              <button className="min-w-5 cursor-move touch-none hover:text-amber-700" {...attributes} {...listeners}>
-                <RiDragMoveFill className="text-2xl" />
-              </button>
-              <button className="min-w-5 cursor-pointer" onClick={handleDelete}>
-                <VortexCheck />
-              </button>
-            </>
-          ) : (
-            <CircleLoader size={20} color="#0519ff" />
-          )}
-        </div>
-      </motion.div>
-
-      {playConfetti && (
-        <Fireworks
-          autorun={{ speed: 30, duration: 100 }}
-          decorateOptions={(options: TCanvasConfettiAnimationOptions) => ({
-            ...options,
-          })}
-        />
-      )}
-    </>
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      cardRef.current = node
+      setNodeRef(node)
+      if (typeof ref === 'function') ref(node)
+      else if (ref) ref.current = node
+    },
+    [setNodeRef, ref]
   )
 
-  function handleDelete() {
-    setIsDeleted(true)
-    setPlayConfetti(true)
-    onDelete(task.id)
+  // Cascade delay only applies to the very first entrance of the card.
+  const [mountDelay] = useState(() => (appear ? Math.min(index, 8) * 0.045 : 0))
+  const [hasEntered, setHasEntered] = useState(false)
+  const enterDelay = hasEntered ? 0 : mountDelay
+
+  // Sucked into the vortex: shrink towards the check button fast, spinning faster and faster.
+  const vortexExit: TargetAndTransition = {
+    opacity: 0,
+    scale: 0,
+    rotate: -1440,
+    transition: {
+      scale: { duration: 1, ease: [0.33, 1, 0.68, 1] },
+      rotate: { duration: 1, ease: [0.5, 0, 0.75, 0] },
+      opacity: { duration: 1, ease: [0.7, 0, 0.84, 0] },
+    },
+  }
+
+  return (
+    <motion.div
+      ref={setRefs}
+      layout
+      style={{ originX: isCompleted ? vortexOrigin : 0.5 }}
+      className={cn(
+        'group relative mb-2.5 flex w-full items-center gap-2 rounded-2xl border py-2.5 pr-2 pl-4 transition-[background-color,border-color,box-shadow] duration-200',
+        isDragging
+          ? 'border-card-hover-border bg-card-hover shadow-lift'
+          : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
+      )}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{
+        opacity: isSaving ? 0.7 : 1,
+        x: transform?.x ?? 0,
+        y: transform?.y ?? 0,
+        scale: isDragging ? 1.04 : 1,
+        rotate: isDragging ? 1.5 : 0,
+        zIndex: isDragging ? 2 : 0,
+      }}
+      onAnimationComplete={() => !hasEntered && setHasEntered(true)}
+      exit={isCompleted ? vortexExit : { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{
+        default: { duration: isDragging ? 0 : 0.25, ease: [0.2, 0.8, 0.2, 1], delay: isDragging ? 0 : enterDelay },
+        opacity: { duration: 0.3, delay: enterDelay },
+        scale: { type: 'spring', stiffness: 420, damping: 26, delay: isDragging ? 0 : enterDelay },
+        rotate: { type: 'spring', stiffness: 420, damping: 22 },
+        zIndex: { delay: isDragging ? 0 : 0.25 },
+        layout: { type: 'spring', stiffness: 520, damping: 42 },
+      }}
+    >
+      {isSaving && <SavingShimmer />}
+
+      <div
+        className="min-w-0 flex-1 py-1 text-[15px] leading-snug font-semibold break-words"
+        onDoubleClick={openEdition}
+      >
+        {task.title}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5">
+        <IconButton label="Edit task" title="Edit" onClick={openEdition} disabled={isSaving}>
+          <Pencil className="size-[18px]" strokeWidth={2.25} />
+        </IconButton>
+        <IconButton
+          label="Drag to reorder, or to the sides to move to another day"
+          title="Drag to reorder · drop on the sides to change day"
+          className="cursor-grab touch-none active:cursor-grabbing"
+          disabled={isSaving}
+          {...attributes}
+          {...listeners}
+        >
+          <Move className="size-[18px]" strokeWidth={2.25} />
+        </IconButton>
+        <button
+          ref={checkRef}
+          type="button"
+          aria-label="Complete task"
+          title="Done!"
+          disabled={isSaving || isCompleted}
+          onClick={handleComplete}
+          onPointerEnter={e => e.pointerType !== 'touch' && setIsCheckHovered(true)}
+          onPointerLeave={() => setIsCheckHovered(false)}
+          onFocus={e => e.currentTarget.matches(':focus-visible') && setIsCheckHovered(true)}
+          onBlur={() => setIsCheckHovered(false)}
+          className="grid size-9 cursor-pointer place-items-center rounded-full transition-transform active:scale-90 disabled:cursor-default"
+        >
+          <VortexCheck active={isCheckHovered || isCompleted} />
+        </button>
+      </div>
+    </motion.div>
+  )
+
+  function handleComplete() {
+    const checkRect = checkRef.current?.getBoundingClientRect()
+    const cardRect = cardRef.current?.getBoundingClientRect()
+
+    if (checkRect && cardRect) {
+      setVortexOrigin((checkRect.left + checkRect.width / 2 - cardRect.left) / cardRect.width)
+    }
+
+    setIsCompleted(true)
+    onComplete(task, checkRect)
   }
 
   function openEdition() {
-    if (taskEdit?.uid !== task.uid) {
-      setTaskEdit(task)
-    }
+    if (isSaving) return
+    setTaskEdit(task)
     setIsEditingTask(true)
   }
+}
+
+function IconButton({ label, className, children, ...props }: ComponentProps<'button'> & { label: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={cn(
+        'grid size-8 cursor-pointer place-items-center rounded-full text-ink-soft sm:size-9 transition-colors hover:bg-amber-500/10 hover:text-amber-700 disabled:pointer-events-none disabled:opacity-30 dark:hover:text-amber-300',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+function SavingShimmer() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+      <div className="animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-white/45 to-transparent dark:via-white/10" />
+    </div>
+  )
 }

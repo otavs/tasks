@@ -1,91 +1,52 @@
-import { useAtom } from 'jotai'
-import { useEffect, useRef, useState } from 'react'
-import { FaPlus } from 'react-icons/fa6'
-import CircleLoader from 'react-spinners/CircleLoader'
+import { motion } from 'framer-motion'
+import { useAtom, useAtomValue } from 'jotai'
+import { Plus } from 'lucide-react'
 
-import Modal from './Modal'
+import { Modal } from './Modal'
+import { TASK_FORM_HEADING_ID, TaskForm } from './TaskForm'
 import { useCreateTaskMutation } from '@/api/tasks/create'
-import { useListTasksQuery } from '@/api/tasks/list'
 import { useKeyPress } from '@/hooks/useKeyPress'
-import { dateAtom } from '@/state/state'
+import { dateAtom, isAnyModalOpenAtom, isCreatingTaskAtom, todayAtom } from '@/state/state'
+import { formDateLabel } from '@/utils/date'
 
 export function TaskCreate() {
-  const [date] = useAtom(dateAtom)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [title, setTitle] = useState('')
-
-  const inputTitleRef = useRef<HTMLInputElement>(null)
+  const date = useAtomValue(dateAtom)
+  const today = useAtomValue(todayAtom)
+  const [isOpen, setIsOpen] = useAtom(isCreatingTaskAtom)
+  const isAnyModalOpen = useAtomValue(isAnyModalOpenAtom)
   const createTask = useCreateTaskMutation()
 
-  const { isPending } = useListTasksQuery()
-  const [showLoader, setShowLoader] = useState(false)
-
-  useEffect(() => {
-    if (isModalOpen) {
-      inputTitleRef.current?.focus()
-    }
-  }, [isModalOpen])
-
-  useKeyPress('n', () => setIsModalOpen(true))
-  useKeyPress('Escape', () => setIsModalOpen(false))
-
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | undefined
-
-    if (isPending) {
-      timeout = setTimeout(() => setShowLoader(true), 300)
-    } else {
-      clearTimeout(timeout)
-      setShowLoader(false)
-    }
-
-    return () => clearTimeout(timeout)
-  }, [isPending])
+  useKeyPress('n', () => setIsOpen(true), { enabled: !isAnyModalOpen })
 
   return (
     <>
-      <div className="flex justify-center">
-        {!showLoader ? (
-          <button
-            className="my-4 cursor-pointer rounded-3xl border-2 border-transparent bg-blue-300 p-3 hover:border-blue-600"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <FaPlus />
-          </button>
-        ) : (
-          <CircleLoader color="#0bffb6" />
-        )}
+      <div className="flex justify-center pt-2">
+        <motion.button
+          type="button"
+          aria-label="New task"
+          title="New task (N)"
+          onClick={() => setIsOpen(true)}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+          className="group grid size-14 cursor-pointer place-items-center rounded-full border-2 border-transparent bg-primary text-primary-ink shadow-card transition-colors hover:border-primary-ring"
+        >
+          <Plus className="size-6 transition-transform duration-300 group-hover:rotate-90" strokeWidth={2.75} />
+        </motion.button>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <form className="bg-nice-green p-6" onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <input
-              required
-              type="text"
-              value={title}
-              ref={inputTitleRef}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Title"
-              className="w-full rounded-md border border-gray-300 bg-sky-50 px-4 py-2"
-            />
-          </div>
-          <div className="flex justify-center">
-            <button className="cursor-pointer rounded-3xl border-2 border-transparent bg-blue-500 px-5 py-2 text-white hover:border-blue-900">
-              Add
-            </button>
-          </div>
-        </form>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} labelledBy={TASK_FORM_HEADING_ID}>
+        <TaskForm
+          heading="New task"
+          subheading={formDateLabel(date, today)}
+          submitLabel="Add"
+          onCancel={() => setIsOpen(false)}
+          onSubmit={title => {
+            createTask.mutate({ title, date })
+            setIsOpen(false)
+          }}
+        />
       </Modal>
     </>
   )
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    createTask.mutate({ title, date })
-
-    setTitle('')
-    setIsModalOpen(false)
-  }
 }

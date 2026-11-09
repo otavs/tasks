@@ -1,60 +1,37 @@
-import { useAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
 
-import Modal from './Modal'
+import { Modal } from './Modal'
+import { TASK_FORM_HEADING_ID, TaskForm } from './TaskForm'
 import { useUpdateTaskMutation } from '@/api/tasks/update'
-import { useKeyPress } from '@/hooks/useKeyPress'
-import { isEditingTaskAtom, taskEditAtom } from '@/state/state'
+import { dateAtom, isEditingTaskAtom, taskEditAtom, todayAtom } from '@/state/state'
+import { formDateLabel } from '@/utils/date'
 
 export function TaskEdit() {
-  const inputTitleRef = useRef<HTMLInputElement>(null)
   const updateTask = useUpdateTaskMutation()
+  const date = useAtomValue(dateAtom)
+  const today = useAtomValue(todayAtom)
 
   const [isEditingTask, setIsEditingTask] = useAtom(isEditingTaskAtom)
-  const [taskEdit, setTaskEdit] = useAtom(taskEditAtom)
+  const [taskEdit] = useAtom(taskEditAtom)
 
-  useEffect(() => {
-    if (isEditingTask) {
-      inputTitleRef.current?.focus()
-    }
-  }, [isEditingTask])
-
-  useKeyPress('Escape', () => setIsEditingTask(false))
+  const close = () => setIsEditingTask(false)
 
   return (
-    <>
-      <Modal isOpen={isEditingTask} onClose={() => setIsEditingTask(false)}>
-        <form className="bg-nice-green p-6" onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <input
-              required
-              type="text"
-              value={taskEdit?.title}
-              ref={inputTitleRef}
-              onChange={e => setTaskEdit({ ...taskEdit!, title: e.target.value })}
-              placeholder="Title"
-              className="w-full rounded-md border border-gray-300 bg-sky-50 px-4 py-2"
-            />
-          </div>
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              className="cursor-pointer rounded-3xl border-2 border-transparent bg-blue-500 px-5 py-2 text-white hover:border-blue-900"
-            >
-              Update
-            </button>
-          </div>
-        </form>
-      </Modal>
-    </>
+    <Modal isOpen={isEditingTask && !!taskEdit} onClose={close} labelledBy={TASK_FORM_HEADING_ID}>
+      {taskEdit && (
+        <TaskForm
+          key={taskEdit.uid}
+          heading="Edit task"
+          subheading={formDateLabel(date, today)}
+          initialTitle={taskEdit.title}
+          submitLabel="Save"
+          onCancel={close}
+          onSubmit={title => {
+            if (title !== taskEdit.title) updateTask.mutate({ id: taskEdit.id, title })
+            close()
+          }}
+        />
+      )}
+    </Modal>
   )
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    updateTask.mutate({ title: taskEdit!.title, id: taskEdit!.id })
-
-    setTaskEdit(undefined)
-    setIsEditingTask(false)
-  }
 }

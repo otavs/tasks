@@ -1,9 +1,9 @@
-import { useAtom } from 'jotai'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAtomValue } from 'jotai'
 
-import { host, taskListKey } from '../api'
+import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskDateModel, TaskModel } from '@/typings/types'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 type Payload = {
   id: number
@@ -12,35 +12,49 @@ type Payload = {
 
 export const useMoveTaskMutation = () => {
   const queryClient = useQueryClient()
-  const [date] = useAtom(dateAtom)
-  const queryKey = taskListKey(date)
+  const currentDate = useAtomValue(dateAtom)
 
   return useMutation({
-    onMutate: async ({ id }: Payload) => {
-      await queryClient.cancelQueries({ queryKey })
+    onMutate: async ({ id, date }: Payload) => {
+      const queryKey = taskListKey(currentDate)
+      const targetKey = taskListKey(date)
+      await Promise.all([queryClient.cancelQueries({ queryKey }), queryClient.cancelQueries({ queryKey: targetKey })])
 
-      const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
-      const movedTask = tasks?.find(task => task.id == id)
-      if (!movedTask) throw 'Task not found'
+      const tasks = queryClient.getQueryData<TaskModel[]>(queryKey) ?? []
+      const index = tasks.findIndex(task => task.id === id)
+      if (index === -1) throw new Error('Task not found')
+      const movedTask = tasks[index]
 
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[] = []) => prevTasks.filter(task => task.id !== id))
+      queryClient.setQueryData<TaskModel[]>(queryKey, (prev = []) => prev.filter(task => task.id !== id))
 
-      return { movedTask }
+      // If we already have the target day cached (prefetched neighbour), show the task there right away.
+      const targetTasks = queryClient.getQueryData<TaskModel[]>(targetKey)
+      if (targetTasks) {
+        queryClient.setQueryData<TaskModel[]>(targetKey, [
+          ...targetTasks,
+          { ...movedTask, date, position: targetTasks.length },
+        ])
+      }
+
+      return { movedTask, index, queryKey, targetKey }
     },
 
-    mutationFn: async (payload: Payload) => {
-      const res = await fetch(`${host}/tasks/move`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw (await res.json()).message
-    },
+    mutationFn: (payload: Payload) => request('/tasks/move', { method: 'PUT', json: payload }),
 
     onError: (_error, _variables, context) => {
-      if (!context?.movedTask) return
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[]) => [...prevTasks, context.movedTask])
+      if (!context) return
+      queryClient.setQueryData<TaskModel[]>(context.queryKey, (prev = []) => {
+        const next = [...prev]
+        next.splice(context.index, 0, context.movedTask)
+        return next
+      })
+      queryClient.setQueryData<TaskModel[]>(context.targetKey, prev =>
+        prev?.filter(task => task.uid !== context.movedTask.uid)
+      )
+    },
+
+    onSettled: (_data, _error, _variables, context) => {
+      if (context) queryClient.invalidateQueries({ queryKey: context.targetKey })
     },
   })
 }

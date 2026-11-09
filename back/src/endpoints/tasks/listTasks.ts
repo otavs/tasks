@@ -20,6 +20,7 @@ export const listTasks = async (req: Request, res: Response) => {
   try {
     const tasks = await prisma.task.findMany({
       where: { day, month, year },
+      orderBy: { position: 'asc' },
     })
     res.json(tasks)
   } catch (error) {

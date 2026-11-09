@@ -1,17 +1,32 @@
 import { atom } from 'jotai'
 
 import { TaskDateModel, TaskModel } from '@/typings/types'
+import { dayDiff, todayTaskDate } from '@/utils/date'
 
-const today = new Date()
+/** The real current day. Kept fresh by the clock so the app survives midnight. */
+export const todayAtom = atom<TaskDateModel>(todayTaskDate())
 
-export const dateAtom = atom<TaskDateModel>({
-  day: today.getDate(),
-  month: today.getMonth() + 1,
-  year: today.getFullYear(),
-})
+const viewedDateAtom = atom<TaskDateModel>(todayTaskDate())
+
+/** -1 when we navigated to an earlier day, 1 for a later one. Drives the slide animations. */
+export const dayDirectionAtom = atom<1 | -1>(1)
+
+/** The day being viewed. Writing to it also records the navigation direction. */
+export const dateAtom = atom(
+  get => get(viewedDateAtom),
+  (get, set, next: TaskDateModel) => {
+    const diff = dayDiff(get(viewedDateAtom), next)
+    if (diff === 0) return
+    set(dayDirectionAtom, diff > 0 ? 1 : -1)
+    set(viewedDateAtom, next)
+  }
+)
+
+export const isCreatingTaskAtom = atom(false)
 
 export const taskEditAtom = atom<TaskModel>()
 export const isEditingTaskAtom = atom(false)
 
 export const isDraggingTaskAtom = atom(false)
-export const draggingTaskIdAtom = atom<number | null>()
+
+export const isAnyModalOpenAtom = atom(get => get(isCreatingTaskAtom) || get(isEditingTaskAtom))

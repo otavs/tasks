@@ -1,36 +1,37 @@
-import { useAtom } from 'jotai'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAtomValue } from 'jotai'
 
-import { host, taskListKey } from '../api'
+import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 export const useDeleteTaskMutation = () => {
   const queryClient = useQueryClient()
-  const [date] = useAtom(dateAtom)
-  const queryKey = taskListKey(date)
+  const date = useAtomValue(dateAtom)
 
   return useMutation({
     onMutate: async (taskId: number) => {
+      const queryKey = taskListKey(date)
       await queryClient.cancelQueries({ queryKey })
 
-      const tasks = queryClient.getQueryData(queryKey) as TaskModel[]
-      const deletedTask = tasks?.find(task => task.id == taskId)
-      if (!deletedTask) throw 'Task not found'
+      const tasks = queryClient.getQueryData<TaskModel[]>(queryKey) ?? []
+      const index = tasks.findIndex(task => task.id === taskId)
+      if (index === -1) throw new Error('Task not found')
 
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[] = []) => prevTasks.filter(task => task.id !== taskId))
+      queryClient.setQueryData<TaskModel[]>(queryKey, (prev = []) => prev.filter(task => task.id !== taskId))
 
-      return { deletedTask }
+      return { deletedTask: tasks[index], index, queryKey, date }
     },
 
-    mutationFn: async (taskId: number) => {
-      const res = await fetch(`${host}/tasks/${taskId}`, { method: 'DELETE' })
-      if (!res.ok) throw (await res.json()).message
-    },
+    mutationFn: (taskId: number) => request(`/tasks/${taskId}`, { method: 'DELETE' }),
 
     onError: (_error, _variables, context) => {
-      if (!context?.deletedTask) return
-      queryClient.setQueryData(queryKey, (prevTasks: TaskModel[]) => [...prevTasks, context.deletedTask])
+      if (!context) return
+      queryClient.setQueryData<TaskModel[]>(context.queryKey, (prev = []) => {
+        const next = [...prev]
+        next.splice(context.index, 0, context.deletedTask)
+        return next
+      })
     },
   })
 }

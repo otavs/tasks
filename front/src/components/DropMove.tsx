@@ -1,35 +1,54 @@
 import { useDroppable } from '@dnd-kit/core'
 import { motion } from 'framer-motion'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-import { isDraggingTaskAtom } from '@/state/state'
+import { dateAtom, isDraggingTaskAtom } from '@/state/state'
+import { cn } from '@/utils/cn'
+import { shiftDate, shortDayLabel } from '@/utils/date'
 
-export function DropMove({ id, dir, hide }: { id: string; dir: 'left' | 'right'; hide: boolean }) {
+/** Drop zone on the side of the list: drop a task here to move it to the previous / next day. */
+export function DropMove({ id, dir }: { id: string; dir: -1 | 1 }) {
   const { isOver, setNodeRef } = useDroppable({ id })
-  const [isDraggingTask] = useAtom(isDraggingTaskAtom)
+  const isDraggingTask = useAtomValue(isDraggingTaskAtom)
+  const date = useAtomValue(dateAtom)
 
-  const duration = isOver ? 0.1 : isDraggingTask ? 3 : 0.3
-
-  if (hide) return
+  const Icon = dir < 0 ? ChevronLeft : ChevronRight
 
   return (
     <motion.div
       ref={setNodeRef}
-      initial={{ opacity: 0, scale: 0.95, backgroundColor: '#bbf7d0' }}
+      aria-hidden={!isDraggingTask}
+      initial={false}
       animate={{
         opacity: isDraggingTask ? 1 : 0,
-        scale: isDraggingTask ? [0.95, 1, 0.95] : 0.95,
-        backgroundColor: isOver ? '#86efac' : '#bbf7d0',
+        scale: isOver ? 1.04 : isDraggingTask ? [0.97, 1, 0.97] : 0.95,
       }}
       transition={{
-        opacity: { duration, ease: 'easeIn' },
-        scale: { duration: 3, repeat: Infinity, ease: 'linear' },
-        backgroundColor: { duration: 0.3, ease: 'easeInOut' },
+        opacity: { duration: isDraggingTask ? 0.35 : 0.2, ease: 'easeOut' },
+        scale: isOver
+          ? { type: 'spring', stiffness: 400, damping: 20 }
+          : { duration: 2.4, repeat: isDraggingTask ? Infinity : 0, ease: 'easeInOut' },
       }}
-      className={`flex w-[8%] items-center justify-center rounded-2xl sm:w-[20%] ${isOver && 'cursor-pointer'}`}
       style={{ pointerEvents: isDraggingTask ? 'auto' : 'none' }}
+      className={cn(
+        'z-[1] mb-2.5 flex shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed text-zone-ink backdrop-blur-sm transition-colors duration-200 sm:w-[20%]',
+        // On phones the zones float over the edges of the list instead of taking up width.
+        'max-sm:absolute max-sm:top-0 max-sm:bottom-2.5 max-sm:w-12',
+        dir < 0 ? 'max-sm:left-0' : 'max-sm:right-0',
+        isOver ? 'border-zone-ink/50 bg-zone-over' : 'border-zone-ink/25 bg-zone/85'
+      )}
     >
-      {dir === 'left' ? '←' : '→'}
+      <motion.div
+        animate={isDraggingTask ? { x: [0, dir * 4, 0] } : { x: 0 }}
+        transition={{ duration: isOver ? 0.6 : 1.2, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <Icon className="size-5 sm:size-6" strokeWidth={2.75} />
+      </motion.div>
+      <div className="hidden text-center leading-tight sm:block">
+        <div className="text-[11px] font-bold tracking-widest uppercase opacity-70">Move to</div>
+        <div className="font-display text-base font-semibold">{shortDayLabel(shiftDate(date, dir))}</div>
+      </div>
     </motion.div>
   )
 }

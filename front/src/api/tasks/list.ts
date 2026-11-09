@@ -1,36 +1,32 @@
-import { useAtom } from 'jotai'
+import { QueryClient, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAtomValue } from 'jotai'
 
-import { host, taskListKey } from '../api'
+import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
-import { TaskModel } from '@/typings/types'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { TaskDateModel, TaskModel } from '@/typings/types'
 
-export const useListTasksQuery = () => {
-  const queryClient = useQueryClient()
-  const [date] = useAtom(dateAtom)
-  const queryKey = taskListKey(date)
+export const newUid = () => -Math.floor(Math.random() * 1_000_000_000)
 
-  return useQuery({
-    queryKey: ['tasks', date.day, date.month, date.year],
+export const tasksQueryOptions = (date: TaskDateModel, queryClient: QueryClient) =>
+  queryOptions({
+    queryKey: taskListKey(date),
     queryFn: async () => {
-      const response = await fetch(`${host}/tasks/${date.day}-${date.month}-${date.year}`)
+      const tasks = await request<TaskModel[]>(`/tasks/${date.day}-${date.month}-${date.year}`)
 
-      if (response.status == 404) return Promise.resolve([])
-      if (!response.ok) throw new Error('Failed to fetch user data')
-
-      const tasks = (await response.json()) as TaskModel[]
-
-      const prevTasks = queryClient.getQueryData(queryKey) as TaskModel[]
-
+      // Keep the client-side uid stable across refetches so cards don't remount/re-animate.
+      const prevTasks = queryClient.getQueryData<TaskModel[]>(taskListKey(date))
       tasks.forEach(task => {
-        const prevTask = prevTasks?.find(prevTask => prevTask.id == task.id)
-        task.uid = prevTask ? prevTask.uid : -Math.floor(Math.random() * 1000000000)
+        task.uid = prevTasks?.find(prevTask => prevTask.id === task.id)?.uid ?? newUid()
       })
 
-      tasks.sort((a, b) => a.position - b.position)
-
-      return Promise.resolve(tasks)
+      return tasks.sort((a, b) => a.position - b.position)
     },
     refetchInterval: 15000,
   })
+
+export const useListTasksQuery = () => {
+  const queryClient = useQueryClient()
+  const date = useAtomValue(dateAtom)
+
+  return useQuery(tasksQueryOptions(date, queryClient))
 }
