@@ -14,6 +14,8 @@ model Task {
   year     Int
   title    String
   /// Minutes since midnight (0..1439). Tasks are ordered by time, then by position.
-  time     Int    @default(540)
-  position Int
+  time       Int     @default(540)
+  position   Int
+  /// "Loading": you're already working on it (shows a spinner, skips the notification).
+  inProgress Boolean @default(false)
 }

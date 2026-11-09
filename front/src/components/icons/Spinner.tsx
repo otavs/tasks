@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 
+import { rainbowCycle } from '@/utils/rainbow'
+
 // https://github.com/n3r4zzurr0/svg-spinners
 
 export const Spinner = () => {
   const options = useMemo(
     () => ({
-      colors: colorList(),
+      colors: rainbowCycle(),
       duration: 4.5 + Math.random(),
       direction: Math.random() > 0.5 ? 1 : -1,
     }),
@@ -38,19 +40,4 @@ export const Spinner = () => {
       />
     </motion.svg>
   )
-}
-
-// The same rainbow, nudged per theme so every colour stays visible on the cards.
-const lightColors = ['#FF0000', '#FF7F00', '#F2C200', '#00C800', '#0000FF', '#4B0082', '#9400D3']
-const darkColors = ['#FF4D4D', '#FF9933', '#FFE033', '#33E633', '#5C7CFF', '#A35CFF', '#D65CFF']
-
-function colorList() {
-  const isDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  const shuffled = [...(isDark ? darkColors : lightColors)]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-  shuffled.push(shuffled[0])
-  return shuffled
 }

@@ -4,11 +4,16 @@ import { isValidTime, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
 
 export const updateTask = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
-  const { title, time } = req.body
+  const { title, time, inProgress } = req.body
   const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
-  if (title === undefined && time === undefined) {
-    res.status(400).json({ error: 'title or time is required' })
+  if (title === undefined && time === undefined && inProgress === undefined) {
+    res.status(400).json({ error: 'title, time or inProgress is required' })
+    return
+  }
+
+  if (inProgress !== undefined && typeof inProgress !== 'boolean') {
+    res.status(400).json({ error: 'inProgress must be a boolean' })
     return
   }
 
@@ -33,7 +38,11 @@ export const updateTask = async (req: Request, res: Response) => {
     const updatedTask = await prisma.$transaction(async (tx) => {
       await tx.task.update({
         where: { id },
-        data: { ...(title !== undefined && { title: trimmedTitle }), ...(time !== undefined && { time }) },
+        data: {
+          ...(title !== undefined && { title: trimmedTitle }),
+          ...(time !== undefined && { time }),
+          ...(inProgress !== undefined && { inProgress }),
+        },
       })
 
       // A new time moves the task to the end of its new time group.

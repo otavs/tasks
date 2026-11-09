@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { AnimatePresence, MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
 import { useAtom, useSetAtom } from 'jotai'
-import { GripVertical, Pencil } from 'lucide-react'
+import { GripVertical, Pause, Pencil, Play } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RollingText } from './RollingText'
@@ -21,11 +21,12 @@ interface Props {
   overdue: boolean
   onComplete: (task: TaskModel, checkRect?: DOMRect) => void
   onTimeChange: (task: TaskModel, time: number) => void
+  onToggleProgress: (task: TaskModel) => void
   /** Injected by AnimatePresence (popLayout). */
   ref?: Ref<HTMLDivElement>
 }
 
-export function Task({ task, index, appear, overdue, onComplete, onTimeChange, ref }: Props) {
+export function Task({ task, index, appear, overdue, onComplete, onTimeChange, onToggleProgress, ref }: Props) {
   const setIsEditingTask = useSetAtom(isEditingTaskAtom)
   const setTaskEdit = useSetAtom(taskEditAtom)
   const [openTimePicker, setOpenTimePicker] = useAtom(openTimePickerAtom)
@@ -171,6 +172,20 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, r
         <IconButton label="Edit task" title="Edit" onClick={() => openEdition()} disabled={isSaving}>
           <Pencil className="size-[18px]" strokeWidth={2.25} />
         </IconButton>
+        <IconButton
+          label={task.inProgress ? 'Stop working on it' : 'Start working on it'}
+          title={task.inProgress ? 'Stop working on it' : "I'm working on it"}
+          aria-pressed={task.inProgress}
+          onClick={() => onToggleProgress(task)}
+          disabled={isSaving}
+          className={task.inProgress ? 'text-primary-strong' : undefined}
+        >
+          {task.inProgress ? (
+            <Pause className="size-[18px]" strokeWidth={2.5} fill="currentColor" />
+          ) : (
+            <Play className="size-[18px]" strokeWidth={2.25} />
+          )}
+        </IconButton>
         <button
           ref={checkRef}
           type="button"
@@ -184,7 +199,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, r
           onBlur={() => setIsCheckHovered(false)}
           className="grid size-9 cursor-pointer place-items-center rounded-full transition-transform active:scale-90 disabled:cursor-default"
         >
-          <VortexCheck active={isCheckHovered || isCompleted} />
+          <VortexCheck active={isCheckHovered || isCompleted} inProgress={task.inProgress} />
         </button>
       </div>
 

@@ -11,5 +11,7 @@ export type TaskModel = {
   /** Minutes since midnight (0..1439). */
   time: number
   position: number
+  /** "Loading": already being worked on. */
+  inProgress: boolean
   uid: number
 }

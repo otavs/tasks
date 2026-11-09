@@ -3,7 +3,7 @@ import { prisma } from '../../prisma.ts'
 import { DEFAULT_TIME, isValidTime, placeAt, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
 
 export const createTask = async (req: Request, res: Response) => {
-  const { title, date = {}, position, time } = req.body
+  const { title, date = {}, position, time, inProgress = false } = req.body
   const { day, month, year } = date
   const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
@@ -14,6 +14,11 @@ export const createTask = async (req: Request, res: Response) => {
 
   if (time !== undefined && !isValidTime(time)) {
     res.status(400).json({ error: 'time must be an integer number of minutes between 0 and 1439' })
+    return
+  }
+
+  if (typeof inProgress !== 'boolean') {
+    res.status(400).json({ error: 'inProgress must be a boolean' })
     return
   }
 
@@ -31,7 +36,13 @@ export const createTask = async (req: Request, res: Response) => {
       const count = await tx.task.count({ where })
 
       const task = await tx.task.create({
-        data: { title: trimmedTitle, time: time ?? lastTask?.time ?? DEFAULT_TIME, position: count, ...where },
+        data: {
+          title: trimmedTitle,
+          time: time ?? lastTask?.time ?? DEFAULT_TIME,
+          inProgress,
+          position: count,
+          ...where,
+        },
       })
 
       // Without a position it goes to the end of its time group; with one (e.g. "undo") it's put back there.

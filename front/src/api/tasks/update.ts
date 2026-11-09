@@ -10,6 +10,7 @@ type Payload = {
   id: number
   title?: string
   time?: number
+  inProgress?: boolean
 }
 
 export const useUpdateTaskMutation = () => {
@@ -17,7 +18,7 @@ export const useUpdateTaskMutation = () => {
   const date = useAtomValue(dateAtom)
 
   return useMutation({
-    onMutate: async ({ id, title, time }: Payload) => {
+    onMutate: async ({ id, title, time, inProgress }: Payload) => {
       const queryKey = taskListKey(date)
       await queryClient.cancelQueries({ queryKey })
 
@@ -25,7 +26,12 @@ export const useUpdateTaskMutation = () => {
       const task = prevTasks.find(task => task.id === id)
       if (!task) throw new Error('Task not found')
 
-      const updated = { ...task, title: title ?? task.title, time: time ?? task.time }
+      const updated = {
+        ...task,
+        title: title ?? task.title,
+        time: time ?? task.time,
+        inProgress: inProgress ?? task.inProgress,
+      }
       const timeChanged = updated.time !== task.time
 
       queryClient.setQueryData<TaskModel[]>(queryKey, (tasks = []) =>

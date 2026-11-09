@@ -123,6 +123,7 @@ export function TaskList() {
                     overdue={isOverdue(task)}
                     onComplete={handleComplete}
                     onTimeChange={(task, time) => updateTask.mutate({ id: task.id, time })}
+                    onToggleProgress={task => updateTask.mutate({ id: task.id, inProgress: !task.inProgress })}
                   />
                 ))}
               </AnimatePresence>
@@ -195,7 +196,14 @@ export function TaskList() {
       duration: 5000,
       action: {
         label: 'Undo',
-        run: () => createTask.mutate({ title: task.title, date: taskDate, time: task.time, position: index }),
+        run: () =>
+          createTask.mutate({
+            title: task.title,
+            date: taskDate,
+            time: task.time,
+            inProgress: task.inProgress,
+            position: index,
+          }),
       },
     })
   }

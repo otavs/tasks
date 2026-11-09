@@ -9,6 +9,7 @@ type Payload = {
   title: string
   date: TaskDateModel
   time: number
+  inProgress?: boolean
   /** Put back at this index instead of the end of its time group (used by "undo"). */
   position?: number
 }
@@ -26,7 +27,7 @@ export const useCreateTaskMutation = () => {
       const uid = newUid()
 
       queryClient.setQueryData<TaskModel[]>(queryKey, (old = []) => {
-        const optimisticTask: TaskModel = { id: -1, uid, ...newTask, position: old.length }
+        const optimisticTask: TaskModel = { id: -1, uid, inProgress: false, ...newTask, position: old.length }
         const next = [...old]
         next.splice(Math.min(newTask.position ?? old.length, old.length), 0, optimisticTask)
         return resequence(next)
