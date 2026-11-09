@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { TargetAndTransition, motion } from 'framer-motion'
 import { useSetAtom } from 'jotai'
-import { Move, Pencil } from 'lucide-react'
+import { GripVertical, Pencil } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useRef, useState } from 'react'
 
 import { VortexCheck } from './VortexCheck'
@@ -71,7 +71,7 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
       layout
       style={{ originX: isCompleted ? vortexOrigin : 0.5 }}
       className={cn(
-        'group relative mb-2.5 flex w-full items-center gap-2 rounded-2xl border py-2.5 pr-2 pl-4 transition-[background-color,border-color,box-shadow] duration-200',
+        'group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging
           ? 'border-card-hover-border bg-card-hover shadow-lift'
           : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
@@ -98,6 +98,21 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
     >
       {isSaving && <SavingShimmer />}
 
+      <button
+        type="button"
+        aria-label="Drag to reorder, or to the sides to move to another day"
+        title="Drag to reorder · drop on the sides to change day"
+        disabled={isSaving}
+        {...attributes}
+        {...listeners}
+        className={cn(
+          '-my-1 flex w-6 shrink-0 cursor-grab touch-none items-center justify-center self-stretch rounded-xl transition-colors active:cursor-grabbing disabled:pointer-events-none',
+          isDragging ? 'text-amber-600 dark:text-amber-300' : 'text-ink-faint/60 group-hover:text-ink-soft'
+        )}
+      >
+        <GripVertical className="size-4" strokeWidth={2.5} />
+      </button>
+
       <div
         className="min-w-0 flex-1 py-1 text-[15px] leading-snug font-semibold break-words"
         onDoubleClick={openEdition}
@@ -108,16 +123,6 @@ export function Task({ task, index, appear, onComplete, ref }: Props) {
       <div className="flex shrink-0 items-center gap-0.5">
         <IconButton label="Edit task" title="Edit" onClick={openEdition} disabled={isSaving}>
           <Pencil className="size-[18px]" strokeWidth={2.25} />
-        </IconButton>
-        <IconButton
-          label="Drag to reorder, or to the sides to move to another day"
-          title="Drag to reorder · drop on the sides to change day"
-          className="cursor-grab touch-none active:cursor-grabbing"
-          disabled={isSaving}
-          {...attributes}
-          {...listeners}
-        >
-          <Move className="size-[18px]" strokeWidth={2.25} />
         </IconButton>
         <button
           ref={checkRef}
