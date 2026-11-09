@@ -23,20 +23,18 @@ export function TaskCreate() {
 
   return (
     <>
-      <div className="flex justify-center pt-2">
-        <motion.button
-          type="button"
-          aria-label="New task"
-          title="New task (N)"
-          onClick={() => setIsOpen(true)}
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-          className="group grid size-14 cursor-pointer place-items-center rounded-full border-2 border-transparent bg-primary text-primary-ink shadow-card transition-colors hover:border-primary-ring"
-        >
-          <Plus className="size-6 transition-transform duration-300 group-hover:rotate-90" strokeWidth={2.75} />
-        </motion.button>
-      </div>
+      <motion.button
+        type="button"
+        aria-label="New task"
+        title="New task (N)"
+        onClick={() => setIsOpen(true)}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+        className="group grid size-14 cursor-pointer place-items-center rounded-full border-2 border-transparent bg-primary text-primary-ink shadow-card transition-colors hover:border-primary-ring"
+      >
+        <Plus className="size-6 transition-transform duration-300 group-hover:rotate-90" strokeWidth={2.75} />
+      </motion.button>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} labelledBy={TASK_FORM_HEADING_ID}>
         <TaskForm

@@ -13,5 +13,25 @@ export type TaskModel = {
   position: number
   /** "Loading": already being worked on. */
   inProgress: boolean
+  /** The recurrence that created it, if any. */
+  recurrenceId?: number | null
   uid: number
 }
+
+export type RecurrenceItemModel = {
+  id: number
+  /** Empty means "use the recurrence's name". */
+  title: string
+  time: number
+}
+
+export type RecurrenceModel = {
+  id: number
+  name: string
+  /** Bitmask of weekdays: bit 0 = Sunday ... bit 6 = Saturday. */
+  weekdays: number
+  enabled: boolean
+  items: RecurrenceItemModel[]
+}
+
+export type RecurrenceInput = Omit<RecurrenceModel, 'id' | 'items'> & { items: Omit<RecurrenceItemModel, 'id'>[] }

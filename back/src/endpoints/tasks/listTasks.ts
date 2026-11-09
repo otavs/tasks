@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
+import { materializeRecurrences } from '../../utils/recurrences.ts'
 
 export const listTasks = async (req: Request, res: Response) => {
   const { date } = req.params
@@ -18,6 +19,11 @@ export const listTasks = async (req: Request, res: Response) => {
   const [day, month, year] = dateParts
 
   try {
+    // The client asks for this only for its "today": the start of a day creates its recurring tasks.
+    if (req.query.materialize === '1') {
+      await materializeRecurrences({ day, month, year })
+    }
+
     const tasks = await prisma.task.findMany({
       where: { day, month, year },
       orderBy: [{ time: 'asc' }, { position: 'asc' }],

@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { AnimatePresence, MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
 import { useAtom, useSetAtom } from 'jotai'
-import { GripVertical, Pause, Pencil, Play } from 'lucide-react'
+import { GripVertical, Pause, Pencil, Play, Repeat } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RollingText } from './RollingText'
@@ -166,6 +166,13 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
         onDoubleClick={() => openEdition()}
       >
         {task.title}
+        {task.recurrenceId != null && (
+          <Repeat
+            aria-label="Recurring task"
+            className="ml-1.5 inline size-3.5 -translate-y-px text-ink-faint"
+            strokeWidth={2.75}
+          />
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">

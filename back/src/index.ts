@@ -6,6 +6,7 @@ import cors from 'cors'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { taskRouter } from './routers/taskRouter.ts'
+import { recurrenceRouter } from './routers/recurrenceRouter.ts'
 import { rateLimiter } from './middlewares/rateLimit.ts'
 
 const app = express()
@@ -25,6 +26,7 @@ if (process.env.ENV === 'production') {
 app.use(express.json())
 app.use(cors())
 app.use('/tasks', taskRouter)
+app.use('/recurrences', recurrenceRouter)
 
 app.listen(process.env.PORT, () => {
   console.log(`Server listening on port ${process.env.PORT}`)

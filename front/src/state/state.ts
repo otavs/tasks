@@ -38,6 +38,9 @@ export const openTimePickerAtom = atom<number | null>(null)
 
 export const isDraggingTaskAtom = atom(false)
 
+export const isRecurrencesOpenAtom = atom(false)
+
 export const isAnyModalOpenAtom = atom(
-  get => get(isCreatingTaskAtom) || get(isEditingTaskAtom) || get(openTimePickerAtom) !== null
+  get =>
+    get(isCreatingTaskAtom) || get(isEditingTaskAtom) || get(isRecurrencesOpenAtom) || get(openTimePickerAtom) !== null
 )

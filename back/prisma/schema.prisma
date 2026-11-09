@@ -8,14 +8,51 @@ datasource db {
 }
 
 model Task {
-  id       Int    @id @default(autoincrement())
-  day      Int
-  month    Int
-  year     Int
-  title    String
+  id         Int     @id @default(autoincrement())
+  day        Int
+  month      Int
+  year       Int
+  title      String
   /// Minutes since midnight (0..1439). Tasks are ordered by time, then by position.
   time       Int     @default(540)
   position   Int
   /// "Loading": you're already working on it (shows a spinner, skips the notification).
   inProgress Boolean @default(false)
+
+  /// The recurrence that created this task, if any.
+  recurrenceId Int?
+  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+}
+
+/// A set of tasks created automatically at the start of each matching day.
+model Recurrence {
+  id       Int              @id @default(autoincrement())
+  name     String
+  /// Days it applies to, as a bitmask of weekdays: bit 0 = Sunday ... bit 6 = Saturday (127 = every day, 62 = Mon-Fri).
+  weekdays Int              @default(127)
+  enabled  Boolean          @default(true)
+  items    RecurrenceItem[]
+  runs     RecurrenceRun[]
+  tasks    Task[]
+}
+
+model RecurrenceItem {
+  id           Int        @id @default(autoincrement())
+  recurrenceId Int
+  recurrence   Recurrence @relation(fields: [recurrenceId], references: [id], onDelete: Cascade)
+  /// Empty means "use the recurrence's name".
+  title        String
+  /// Minutes since midnight (0..1439).
+  time         Int
+}
+
+/// The days a recurrence already created its tasks for, so completing them never brings them back.
+model RecurrenceRun {
+  recurrenceId Int
+  recurrence   Recurrence @relation(fields: [recurrenceId], references: [id], onDelete: Cascade)
+  day          Int
+  month        Int
+  year         Int
+
+  @@id([recurrenceId, day, month, year])
 }

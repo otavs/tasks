@@ -13,6 +13,9 @@ export function ShortcutsHint() {
       <span>
         <Kbd>T</Kbd> today
       </span>
+      <span>
+        <Kbd>R</Kbd> recurring
+      </span>
     </p>
   )
 }

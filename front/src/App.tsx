@@ -8,6 +8,8 @@ import { TaskCreate } from '@/components/TaskCreate'
 import { TaskEdit } from '@/components/TaskEdit'
 import { TaskList } from '@/components/TaskList'
 import { Toaster } from '@/components/Toaster'
+import { RecurrencesButton } from '@/components/recurrences/RecurrencesButton'
+import { RecurrencesModal } from '@/components/recurrences/RecurrencesModal'
 import { useDayRollover } from '@/hooks/useDayRollover'
 import { useNowTicker } from '@/hooks/useNowTicker'
 
@@ -20,11 +22,19 @@ export default function App() {
       <main className="mx-auto w-full max-w-5xl px-3 pb-28 sm:px-6">
         <Header />
         <TaskList />
-        <TaskCreate />
+        {/* The + stays centred; secondary actions sit on its sides. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 pt-2">
+          <div className="justify-self-end" />
+          <TaskCreate />
+          <div className="justify-self-start">
+            <RecurrencesButton />
+          </div>
+        </div>
         <ShortcutsHint />
       </main>
 
       <TaskEdit />
+      <RecurrencesModal />
       <Toaster />
       <Confetti />
     </MotionConfig>
