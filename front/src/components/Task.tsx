@@ -92,7 +92,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
       className={cn(
         'type-card group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging ? 'shadow-lift' : 'shadow-card',
-        // A plain task turns rose when overdue; a typed one keeps its colours, with a rose sheen.
+        // A plain task turns rose when overdue; a typed one keeps its colours, ringed in rose.
         overdue && type === DEFAULT_TASK_TYPE
           ? cn('overdue-flow border-overdue-border bg-overdue', isDragging && 'overdue-flow-active')
           : cn(
@@ -100,7 +100,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
               isDragging
                 ? 'border-type-border-hover bg-type-hover'
                 : 'border-type-border bg-type hover:border-type-border-hover hover:bg-type-hover',
-              overdue && 'overdue-sheen'
+              overdue && 'overdue-ring'
             )
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}

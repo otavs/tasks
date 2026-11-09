@@ -60,6 +60,8 @@
   --overdue-flow-4: rgb(244 63 94 / 0.25);
   --overdue-badge: #e11d48;
   --overdue-badge-ink: #ffffff;
+  --overdue-ring: rgb(244 63 94 / 0.7);
+  --overdue-glow: rgb(244 63 94 / 0.35);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -115,6 +117,8 @@
     --overdue-flow-4: rgb(244 63 94 / 0.2);
     --overdue-badge: #f43f5e;
     --overdue-badge-ink: #ffffff;
+    --overdue-ring: rgb(251 113 133 / 0.75);
+    --overdue-glow: rgb(251 113 133 / 0.3);
   }
 }
 
@@ -347,42 +351,25 @@
 }
 
 /*
- * A task with a type keeps its own look when overdue: a rose border and the flow's rose sheen
- * gliding over its colours (the red time badge does the rest).
+ * A task with a type keeps its colours untouched when overdue: nothing is painted over it. Instead a
+ * rose ring sits just outside the card and slowly breathes (the red time badge does the rest).
+ * Only its opacity animates, so it's cheap.
  */
-.overdue-sheen {
-  border-color: var(--overdue-border);
-}
-
-.overdue-sheen::before {
+.overdue-ring::before {
   content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
+  inset: -3px;
+  border-radius: calc(1rem + 3px);
+  border: 2px solid var(--overdue-ring);
+  box-shadow: 0 0 12px var(--overdue-glow);
   pointer-events: none;
-  background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--overdue-flow-4) 22%,
-      transparent 45%,
-      var(--overdue-flow-3) 70%,
-      transparent 100%
-    )
-    0 0 / 300% 100% repeat-x;
-  animation: overdue-sheen 12s linear infinite;
+  animation: overdue-breathe 2.8s ease-in-out infinite;
   animation-delay: var(--overdue-offset, 0s);
 }
 
-@keyframes overdue-sheen {
-  to {
-    background-position: 150% 0;
-  }
-}
-
-@media (hover: hover) {
-  .overdue-sheen:hover {
-    border-color: var(--overdue-border-hover);
+@keyframes overdue-breathe {
+  50% {
+    opacity: 0.4;
   }
 }
 
@@ -741,7 +728,7 @@
   .animate-drift-c,
   .animate-shimmer,
   .overdue-flow::before,
-  .overdue-sheen::before {
+  .overdue-ring::before {
     animation: none;
   }
 }
