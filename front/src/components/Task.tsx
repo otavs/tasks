@@ -1,5 +1,5 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { AnimatePresence, MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
+import { AnimatePresence, MotionStyle, motion, useAnimate } from 'framer-motion'
 import { useAtom, useSetAtom } from 'jotai'
 import { GripVertical, Pause, Pencil, Play, Repeat } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
@@ -10,6 +10,7 @@ import { VortexCheck } from './VortexCheck'
 import { isEditingTaskAtom, openTimePickerAtom, taskEditAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
 import { cn } from '@/utils/cn'
+import { shatter } from '@/utils/shatter'
 import { formatTime } from '@/utils/time'
 
 interface Props {
@@ -35,7 +36,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
 
   const [isCompleted, setIsCompleted] = useState(false)
   const [isCheckHovered, setIsCheckHovered] = useState(false)
-  const [vortexOrigin, setVortexOrigin] = useState(0.5)
+  const [isShattered, setIsShattered] = useState(false)
 
   const isSaving = task.id === -1
 
@@ -73,25 +74,12 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
   const [hasEntered, setHasEntered] = useState(false)
   const enterDelay = hasEntered ? 0 : mountDelay
 
-  // Sucked into the vortex: shrink towards the check button fast, spinning faster and faster.
-  const vortexExit: TargetAndTransition = {
-    opacity: 0,
-    scale: 0,
-    rotate: -1440,
-    transition: {
-      scale: { duration: 1, ease: [0.33, 1, 0.68, 1] },
-      rotate: { duration: 1, ease: [0.5, 0, 0.75, 0] },
-      opacity: { duration: 1, ease: [0.7, 0, 0.84, 0] },
-    },
-  }
-
   return (
     <motion.div
       ref={setRefs}
       layout
       style={
         {
-          originX: isCompleted ? vortexOrigin : 0.5,
           // Each overdue card's background flow starts at a different phase, so they don't move in lockstep.
           '--overdue-offset': `${index * -2.3}s`,
         } as MotionStyle
@@ -108,7 +96,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{
-        opacity: isSaving ? 0.7 : 1,
+        opacity: isShattered ? 0 : isSaving ? 0.7 : 1,
         x: transform?.x ?? 0,
         y: transform?.y ?? 0,
         scale: isDragging ? 1.04 : 1,
@@ -116,10 +104,14 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
         zIndex: isDragging ? 2 : 0,
       }}
       onAnimationComplete={() => !hasEntered && setHasEntered(true)}
-      exit={isCompleted ? vortexExit : { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      exit={
+        isShattered
+          ? { opacity: 0, transition: { duration: 0 } } // the shards took its place
+          : { opacity: 0, scale: isCompleted ? 0.85 : 0.9, transition: { duration: isCompleted ? 0.35 : 0.2 } }
+      }
       transition={{
         default: { duration: isDragging ? 0 : 0.25, ease: [0.2, 0.8, 0.2, 1], delay: isDragging ? 0 : enterDelay },
-        opacity: { duration: 0.3, delay: enterDelay },
+        opacity: isShattered ? { duration: 0 } : { duration: 0.3, delay: enterDelay },
         scale: { type: 'spring', stiffness: 420, damping: 26, delay: isDragging ? 0 : enterDelay },
         rotate: { type: 'spring', stiffness: 420, damping: 22 },
         zIndex: { delay: isDragging ? 0 : 0.25 },
@@ -226,10 +218,13 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
 
   function handleComplete() {
     const checkRect = checkRef.current?.getBoundingClientRect()
-    const cardRect = cardRef.current?.getBoundingClientRect()
+    const card = cardRef.current
+    const impact = checkRect && { x: checkRect.left + checkRect.width / 2, y: checkRect.top + checkRect.height / 2 }
 
-    if (checkRect && cardRect) {
-      setVortexOrigin((checkRect.left + checkRect.width / 2 - cardRect.left) / cardRect.width)
+    // The card breaks like glass from the check; its shards replace it right away.
+    if (card && shatter(card, impact)) {
+      card.style.opacity = '0'
+      setIsShattered(true)
     }
 
     setIsCompleted(true)
