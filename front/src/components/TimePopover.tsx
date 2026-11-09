@@ -13,12 +13,18 @@ const MARGIN = 8
 
 type Position = { top: number; left: number; above: boolean }
 
-/** Below the anchor, or above it when there's no room, kept inside the viewport. */
+/**
+ * Below the anchor, or above it when there's no room below and more room above.
+ * Always kept inside the viewport, even on very short screens where neither side fully fits.
+ */
 function positionFor(anchor: HTMLElement, height = HEIGHT): Position {
   const rect = anchor.getBoundingClientRect()
-  const above = rect.bottom + MARGIN + height > window.innerHeight && rect.top - MARGIN - height > 0
+  const spaceBelow = window.innerHeight - rect.bottom - MARGIN
+  const spaceAbove = rect.top - MARGIN
+  const above = spaceBelow < height && spaceAbove > spaceBelow
+  const top = above ? rect.top - MARGIN - height : rect.bottom + MARGIN
   return {
-    top: above ? rect.top - MARGIN - height : rect.bottom + MARGIN,
+    top: Math.max(MARGIN, Math.min(top, window.innerHeight - height - MARGIN)),
     left: Math.min(Math.max(MARGIN, rect.left - 8), window.innerWidth - WIDTH - MARGIN),
     above,
   }
