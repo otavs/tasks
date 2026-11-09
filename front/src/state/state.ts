@@ -33,9 +33,11 @@ export const isCreatingTaskAtom = atom(false)
 
 export const taskEditAtom = atom<TaskModel>()
 export const isEditingTaskAtom = atom(false)
-/** Which field the edit form should focus (clicking a card's time focuses the time). */
-export const editFocusAtom = atom<'title' | 'time'>('title')
+/** The task (uid) whose quick time picker is open, if any. Only one at a time. */
+export const openTimePickerAtom = atom<number | null>(null)
 
 export const isDraggingTaskAtom = atom(false)
 
-export const isAnyModalOpenAtom = atom(get => get(isCreatingTaskAtom) || get(isEditingTaskAtom))
+export const isAnyModalOpenAtom = atom(
+  get => get(isCreatingTaskAtom) || get(isEditingTaskAtom) || get(openTimePickerAtom) !== null
+)

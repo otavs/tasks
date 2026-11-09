@@ -8,8 +8,6 @@ interface Props {
   subheading?: string
   initialTitle?: string
   initialTime: number
-  /** Focus the time field (with its hour picker open) instead of the title. */
-  focusTime?: boolean
   submitLabel: string
   onSubmit: (title: string, time: number) => void
   onCancel: () => void
@@ -22,7 +20,6 @@ export function TaskForm({
   subheading,
   initialTitle = '',
   initialTime,
-  focusTime = false,
   submitLabel,
   onSubmit,
   onCancel,
@@ -49,7 +46,7 @@ export function TaskForm({
       </div>
 
       <textarea
-        autoFocus={!focusTime}
+        autoFocus
         required
         rows={2}
         value={title}
@@ -67,7 +64,7 @@ export function TaskForm({
       />
 
       <div className="mt-4 flex items-center gap-2">
-        <TimeField value={time} onChange={setTime} autoOpen={focusTime} />
+        <TimeField value={time} onChange={setTime} />
 
         <div className="ml-auto flex items-center gap-2">
           <button

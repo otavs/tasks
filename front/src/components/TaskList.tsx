@@ -25,6 +25,7 @@ import { useDeleteTaskMutation } from '@/api/tasks/delete'
 import { tasksQueryOptions, useListTasksQuery } from '@/api/tasks/list'
 import { useMoveTaskMutation } from '@/api/tasks/move'
 import { useReorderTaskMutation } from '@/api/tasks/reorder'
+import { useUpdateTaskMutation } from '@/api/tasks/update'
 import { dateAtom, dayDirectionAtom, isDraggingTaskAtom, nowMinutesAtom, todayAtom } from '@/state/state'
 import { toast } from '@/state/toast'
 import { TaskModel } from '@/typings/types'
@@ -47,6 +48,7 @@ export function TaskList() {
   const deleteTask = useDeleteTaskMutation()
   const moveTask = useMoveTaskMutation()
   const createTask = useCreateTaskMutation()
+  const updateTask = useUpdateTaskMutation()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
@@ -120,6 +122,7 @@ export function TaskList() {
                     appear={appear}
                     overdue={isOverdue(task)}
                     onComplete={handleComplete}
+                    onTimeChange={(task, time) => updateTask.mutate({ id: task.id, time })}
                   />
                 ))}
               </AnimatePresence>

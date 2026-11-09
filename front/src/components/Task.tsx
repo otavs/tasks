@@ -1,12 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
-import { useSetAtom } from 'jotai'
+import { AnimatePresence, MotionStyle, TargetAndTransition, motion, useAnimate } from 'framer-motion'
+import { useAtom, useSetAtom } from 'jotai'
 import { GripVertical, Pencil } from 'lucide-react'
 import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RollingText } from './RollingText'
+import { TimePopover } from './TimePopover'
 import { VortexCheck } from './VortexCheck'
-import { editFocusAtom, isEditingTaskAtom, taskEditAtom } from '@/state/state'
+import { isEditingTaskAtom, openTimePickerAtom, taskEditAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
 import { cn } from '@/utils/cn'
 import { formatTime } from '@/utils/time'
@@ -19,14 +20,17 @@ interface Props {
   /** Its time has already passed. */
   overdue: boolean
   onComplete: (task: TaskModel, checkRect?: DOMRect) => void
+  onTimeChange: (task: TaskModel, time: number) => void
   /** Injected by AnimatePresence (popLayout). */
   ref?: Ref<HTMLDivElement>
 }
 
-export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
+export function Task({ task, index, appear, overdue, onComplete, onTimeChange, ref }: Props) {
   const setIsEditingTask = useSetAtom(isEditingTaskAtom)
   const setTaskEdit = useSetAtom(taskEditAtom)
-  const setEditFocus = useSetAtom(editFocusAtom)
+  const [openTimePicker, setOpenTimePicker] = useAtom(openTimePickerAtom)
+  const isTimePickerOpen = openTimePicker === task.uid
+  const commitTimePicker = useRef<() => void>(null)
 
   const [isCompleted, setIsCompleted] = useState(false)
   const [isCheckHovered, setIsCheckHovered] = useState(false)
@@ -143,8 +147,9 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
         type="button"
         aria-label={`Time ${formatTime(task.time)}${overdue ? ', overdue' : ''}. Change time`}
         title={overdue ? 'Overdue · change time' : 'Change time'}
+        aria-expanded={isTimePickerOpen}
         disabled={isSaving}
-        onClick={() => openEdition('time')}
+        onClick={() => (isTimePickerOpen ? commitTimePicker.current?.() : setOpenTimePicker(task.uid))}
         className={cn(
           'shrink-0 cursor-pointer rounded-lg px-1.5 py-0.5 font-display text-sm font-semibold transition-colors disabled:pointer-events-none',
           overdue
@@ -182,6 +187,18 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
           <VortexCheck active={isCheckHovered || isCompleted} />
         </button>
       </div>
+
+      <AnimatePresence>
+        {isTimePickerOpen && badgeRef.current && (
+          <TimePopover
+            anchor={badgeRef.current}
+            initialTime={task.time}
+            commitRef={commitTimePicker}
+            onSave={time => onTimeChange(task, time)}
+            onClose={() => setOpenTimePicker(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 
@@ -197,10 +214,9 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
     onComplete(task, checkRect)
   }
 
-  function openEdition(focus: 'title' | 'time' = 'title') {
+  function openEdition() {
     if (isSaving) return
     setTaskEdit(task)
-    setEditFocus(focus)
     setIsEditingTask(true)
   }
 }

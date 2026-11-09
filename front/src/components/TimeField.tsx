@@ -1,41 +1,32 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Clock3 } from 'lucide-react'
-import { KeyboardEvent, ReactNode, RefObject, useEffect, useRef, useState } from 'react'
+import { Clock3 } from 'lucide-react'
+import { KeyboardEvent, RefObject, useEffect, useRef, useState } from 'react'
 
+import { TimeGrid } from './TimeGrid'
 import { cn } from '@/utils/cn'
 import { pad2 } from '@/utils/date'
-
-type Part = 'hour' | 'minute'
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
+import { TimePart, TypedDigit, timeKeyAction } from '@/utils/timeKeys'
 
 interface Props {
   /** Minutes since midnight. */
   value: number
   onChange: (minutes: number) => void
-  /** Focus the hour and open its picker right away. */
-  autoOpen?: boolean
 }
 
 /**
- * A 24h time field. Clicking the hour or the minute opens a grid with its values right away;
- * picking an hour moves on to the minutes. Fully keyboard friendly: type digits, ↑/↓ to adjust,
- * ←/→ to switch part, Enter to save the form, Esc to close the grid.
+ * A 24h time field for forms. Clicking the hour or the minute opens a grid with its values right away;
+ * picking an hour moves on to the minutes. Keyboard: type digits, ↑/↓ to adjust, ←/→ to switch part,
+ * Enter to submit the form, Esc to close the grid.
  */
-export function TimeField({ value, onChange, autoOpen = false }: Props) {
+export function TimeField({ value, onChange }: Props) {
   const hour = Math.floor(value / 60)
   const minute = value % 60
 
-  const [open, setOpen] = useState<Part | null>(autoOpen ? 'hour' : null)
+  const [open, setOpen] = useState<TimePart | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const hourRef = useRef<HTMLDivElement>(null)
   const minuteRef = useRef<HTMLDivElement>(null)
-  const typed = useRef<{ part: Part; digit: number; at: number } | null>(null)
-
-  useEffect(() => {
-    if (autoOpen) hourRef.current?.focus()
-  }, [autoOpen])
+  const typed = useRef<TypedDigit>(null)
 
   // Close the grid when clicking anywhere else.
   useEffect(() => {
@@ -47,88 +38,41 @@ export function TimeField({ value, onChange, autoOpen = false }: Props) {
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [open])
 
-  const setHour = (h: number) => onChange(h * 60 + minute)
-  const setMinute = (m: number) => onChange(hour * 60 + m)
-  const focusPart = (part: Part) => (part === 'hour' ? hourRef : minuteRef).current?.focus()
+  const focusPart = (part: TimePart) => (part === 'hour' ? hourRef : minuteRef).current?.focus()
+  const toggle = (part: TimePart) => setOpen(current => (current === part ? null : part))
 
-  /** Moves to the other part, keeping the grid open (on the new part) if it was open. */
-  const goTo = (part: Part) => {
-    focusPart(part)
-    setOpen(current => current && part)
+  function pick(part: TimePart, picked: number) {
+    if (part === 'hour') {
+      onChange(picked * 60 + minute)
+      setOpen('minute')
+      focusPart('minute')
+    } else {
+      onChange(hour * 60 + picked)
+      setOpen(null)
+      focusPart('minute')
+    }
   }
 
-  const toggle = (part: Part) => setOpen(current => (current === part ? null : part))
-
-  function pickHour(h: number) {
-    setHour(h)
-    setOpen('minute')
-    focusPart('minute')
-  }
-
-  function pickMinute(m: number) {
-    setMinute(m)
-    setOpen(null)
-    focusPart('minute')
-  }
-
-  function handleKeyDown(part: Part, e: KeyboardEvent<HTMLDivElement>) {
-    const max = part === 'hour' ? 23 : 59
-    const current = part === 'hour' ? hour : minute
-    const set = part === 'hour' ? setHour : setMinute
-
-    if (/^\d$/.test(e.key)) {
+  function handleKeyDown(part: TimePart, e: KeyboardEvent<HTMLDivElement>) {
+    const result = timeKeyAction(e.key, part, value, typed.current)
+    if (result) {
       e.preventDefault()
-      const digit = Number(e.key)
-      const previous = typed.current
-
-      if (previous && previous.part === part && Date.now() - previous.at < 1500) {
-        // Second digit: "1" then "4" -> 14.
-        set(Math.min(previous.digit * 10 + digit, max))
-        typed.current = null
-        if (part === 'hour') goTo('minute')
-      } else {
-        set(digit)
-        if (digit * 10 > max) {
-          // No two-digit value starts with this digit ("7" can only mean 07).
-          typed.current = null
-          if (part === 'hour') goTo('minute')
-        } else {
-          typed.current = { part, digit, at: Date.now() }
-        }
+      typed.current = result.typed
+      if (result.value !== value) onChange(result.value)
+      if (result.part !== part) {
+        focusPart(result.part)
+        setOpen(current => current && result.part) // keep the grid open, on the new part
       }
       return
     }
 
-    switch (e.key) {
-      case 'ArrowUp':
-        e.preventDefault()
-        set((current + 1) % (max + 1))
-        break
-      case 'ArrowDown':
-        e.preventDefault()
-        set((current + max) % (max + 1))
-        break
-      case 'ArrowRight':
-        if (part === 'hour') {
-          e.preventDefault()
-          goTo('minute')
-        }
-        break
-      case 'ArrowLeft':
-        if (part === 'minute') {
-          e.preventDefault()
-          goTo('hour')
-        }
-        break
-      case ' ':
-        e.preventDefault()
-        toggle(part)
-        break
-      case 'Enter':
-        e.preventDefault()
-        if (open) setOpen(null)
-        else rootRef.current?.closest('form')?.requestSubmit()
-        break
+    if (e.key === ' ') {
+      e.preventDefault()
+      toggle(part)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (open) setOpen(null)
+      else rootRef.current?.closest('form')?.requestSubmit()
     }
   }
 
@@ -196,54 +140,7 @@ export function TimeField({ value, onChange, autoOpen = false }: Props) {
             onMouseDown={e => e.preventDefault()}
             className="absolute top-full left-0 z-20 mt-2 w-[17.5rem] origin-top-left rounded-2xl border border-sheet-border bg-sheet p-2 shadow-xl shadow-slate-900/20"
           >
-            <div className="mb-1.5 flex h-7 items-center justify-between px-1.5">
-              <span className="text-[11px] font-extrabold tracking-widest text-ink-soft uppercase">
-                {open === 'hour' ? 'Hour' : 'Minutes'}
-              </span>
-              {open === 'minute' && (
-                <div className="flex items-center gap-0.5 font-display text-sm font-semibold text-ink-soft">
-                  <StepButton label="One minute earlier" onClick={() => setMinute((minute + 59) % 60)}>
-                    <ChevronLeft className="size-4" strokeWidth={2.75} />
-                  </StepButton>
-                  <span className="w-7 text-center text-ink">:{pad2(minute)}</span>
-                  <StepButton label="One minute later" onClick={() => setMinute((minute + 1) % 60)}>
-                    <ChevronRight className="size-4" strokeWidth={2.75} />
-                  </StepButton>
-                </div>
-              )}
-            </div>
-
-            <motion.div
-              key={open}
-              role="listbox"
-              aria-label={open === 'hour' ? 'Hour' : 'Minutes'}
-              initial={{ opacity: 0, x: open === 'minute' ? 10 : -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.15 }}
-              className="grid grid-cols-6 gap-1"
-            >
-              {(open === 'hour' ? HOURS : MINUTES).map(option => {
-                const selected = option === (open === 'hour' ? hour : minute)
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    tabIndex={-1}
-                    onClick={() => (open === 'hour' ? pickHour(option) : pickMinute(option))}
-                    className={cn(
-                      'h-10 cursor-pointer rounded-xl font-display text-base font-semibold transition-colors',
-                      selected
-                        ? 'bg-primary-strong text-primary-strong-ink shadow-md shadow-blue-600/25'
-                        : 'text-ink hover:bg-primary/45'
-                    )}
-                  >
-                    {pad2(option)}
-                  </button>
-                )
-              })}
-            </motion.div>
+            <TimeGrid part={open} value={value} onPick={pick} onChange={onChange} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -287,20 +184,5 @@ function Segment({
     >
       {pad2(value)}
     </div>
-  )
-}
-
-function StepButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      tabIndex={-1}
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="grid size-7 cursor-pointer place-items-center rounded-full transition-colors hover:bg-ink/5 hover:text-ink"
-    >
-      {children}
-    </button>
   )
 }
