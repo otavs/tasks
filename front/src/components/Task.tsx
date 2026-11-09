@@ -177,10 +177,9 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
           aria-pressed={task.inProgress}
           onClick={() => onToggleProgress(task)}
           disabled={isSaving}
-          className={task.inProgress ? 'text-primary-strong' : undefined}
         >
           {task.inProgress ? (
-            <Pause className="size-[18px]" strokeWidth={2.5} fill="currentColor" />
+            <Pause className="size-[18px]" strokeWidth={2.25} />
           ) : (
             <Play className="size-[18px]" strokeWidth={2.25} />
           )}
