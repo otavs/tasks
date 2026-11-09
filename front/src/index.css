@@ -353,7 +353,7 @@
 /*
  * A task with a type keeps its colours untouched when overdue: nothing is painted over it. Instead a
  * rose ring sits just outside the card and slowly breathes (the red time badge does the rest).
- * Only its opacity animates, so it's cheap.
+ * All the rings breathe in step (Task syncs their clocks). Only opacity animates, so it's cheap.
  */
 .overdue-ring::before {
   content: '';
@@ -364,12 +364,64 @@
   box-shadow: 0 0 12px var(--overdue-glow);
   pointer-events: none;
   animation: overdue-breathe 2.8s ease-in-out infinite;
-  animation-delay: var(--overdue-offset, 0s);
 }
 
 @keyframes overdue-breathe {
   50% {
     opacity: 0.4;
+  }
+}
+
+/*
+ * A task you're working on: a comet of light circling the card, just outside its border (drawn by
+ * ProgressComet in Task.tsx), in the type's accent. In the dark its head is lighter and glows; on a
+ * light background a glow would only look like a smudge, so the head is simply the strongest part.
+ */
+.progress-comet {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+  pointer-events: none;
+  color: var(--type-accent);
+}
+
+.progress-comet rect {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.progress-comet-track {
+  opacity: 0.16;
+}
+
+.progress-comet-dash {
+  animation: progress-comet 3s linear infinite;
+}
+
+/* Each dash is very faint; stacked, they fade in smoothly (see ProgressComet). */
+.progress-comet-trail .progress-comet-dash {
+  opacity: 0.075;
+}
+
+.progress-comet-head .progress-comet-dash {
+  opacity: 0.2;
+  stroke-linecap: round;
+}
+
+@media (prefers-color-scheme: dark) {
+  .progress-comet-head {
+    color: color-mix(in oklab, var(--type-accent) 45%, white);
+    filter: drop-shadow(0 0 3px var(--type-accent));
+  }
+}
+
+@keyframes progress-comet {
+  to {
+    stroke-dashoffset: -100;
   }
 }
 
@@ -730,5 +782,14 @@
   .overdue-flow::before,
   .overdue-ring::before {
     animation: none;
+  }
+
+  /* No comet going round: just a steady outline. */
+  .progress-comet-dash {
+    display: none;
+  }
+
+  .progress-comet-track {
+    opacity: 0.6;
   }
 }

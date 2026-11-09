@@ -191,7 +191,7 @@ function freezeCopies() {
 }
 
 const isPlainContainer = (element: Element) => {
-  if (element.children.length < 2) return false
+  if (element instanceof SVGElement || element.children.length < 2) return false
   if ([...element.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())) return false
   const style = getComputedStyle(element)
   return (
@@ -223,6 +223,8 @@ function takeApart(element: HTMLElement, rect: DOMRect) {
   const parts: { box: Box; copy: HTMLElement }[] = []
   const collect = (parent: Element) => {
     for (const child of parent.children) {
+      // Decorations around the card (like the "working on it" comet) don't break with it.
+      if (child.hasAttribute('data-shatter-skip')) continue
       if (isPlainContainer(child)) {
         collect(child)
         continue

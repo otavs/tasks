@@ -73,6 +73,17 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
     wasOverdue.current = overdue
   }, [overdue, animateBadge, badgeRef])
 
+  // A typed overdue card is ringed in rose (unless you're on it: then the comet has the border).
+  const isRinged = overdue && !task.inProgress && type !== DEFAULT_TASK_TYPE
+  const hasComet = task.inProgress && !isSaving
+  // All the rings breathe in step, and all the comets circle in step. CSS starts each animation when
+  // its card appears, and starts it over when the card is moved in the page (a reorder moves its
+  // element), so they're pinned to the same clock whenever that may have happened.
+  useEffect(() => {
+    if (isRinged) syncAnimations('overdue-breathe')
+    if (hasComet) syncAnimations('progress-comet')
+  }, [isRinged, hasComet, index])
+
   // Cascade delay only applies to the very first entrance of the card.
   const [mountDelay] = useState(() => (appear ? Math.min(index, 8) * 0.045 : 0))
   const [hasEntered, setHasEntered] = useState(false)
@@ -92,7 +103,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
       className={cn(
         'type-card group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging ? 'shadow-lift' : 'shadow-card',
-        // A plain task turns rose when overdue; a typed one keeps its colours, ringed in rose.
+        // A plain task turns rose when overdue; a typed one keeps its colours (see isRinged).
         overdue && type === DEFAULT_TASK_TYPE
           ? cn('overdue-flow border-overdue-border bg-overdue', isDragging && 'overdue-flow-active')
           : cn(
@@ -100,7 +111,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
               isDragging
                 ? 'border-type-border-hover bg-type-hover'
                 : 'border-type-border bg-type hover:border-type-border-hover hover:bg-type-hover',
-              overdue && 'overdue-ring'
+              isRinged && 'overdue-ring'
             )
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -128,6 +139,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
       }}
     >
       {isSaving && <SavingShimmer />}
+      {hasComet && <ProgressComet />}
 
       <button
         type="button"
@@ -273,4 +285,54 @@ function SavingShimmer() {
       <div className="animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-white/45 to-transparent dark:via-white/10" />
     </div>
   )
+}
+
+/** Seconds for the comet to go once around the card. */
+const COMET_LAP = 3
+
+/**
+ * A smooth fade along the comet: many very faint dashes (lengths in % of the way around), all ending
+ * at the same front, so the strength builds up step by step, each step too small to see.
+ */
+const fade = (reach: number, steps: number) => Array.from({ length: steps }, (_, i) => reach * (1 - i / steps))
+
+/** The long trail, then the head: the same kind of fade, shorter, stronger and (in the dark) glowing. */
+const COMET_TRAIL = fade(36, 28)
+const COMET_HEAD = fade(7, 10)
+
+/**
+ * "I'm working on it": a comet of light circling the card just outside its border, at an even speed
+ * whatever the card's shape (the outline is measured as 100 units, `pathLength`). Each dash's
+ * animation is shifted by its length, so all their fronts move together as one point.
+ */
+function ProgressComet() {
+  return (
+    <svg aria-hidden data-shatter-skip className="progress-comet">
+      <rect className="progress-comet-track" width="100%" height="100%" rx="17" pathLength={100} />
+      <g className="progress-comet-trail">{COMET_TRAIL.map(cometDash)}</g>
+      <g className="progress-comet-head">{COMET_HEAD.map(cometDash)}</g>
+    </svg>
+  )
+}
+
+function cometDash(length: number, i: number) {
+  return (
+    <rect
+      key={i}
+      className="progress-comet-dash"
+      width="100%"
+      height="100%"
+      rx="17"
+      pathLength={100}
+      strokeDasharray={`${length} ${100 - length}`}
+      style={{ animationDuration: `${COMET_LAP}s`, animationDelay: `${(length / 100 - 1) * COMET_LAP}s` }}
+    />
+  )
+}
+
+/** Puts every running CSS animation with this name on the same clock, so they all move in step. */
+function syncAnimations(name: string) {
+  for (const animation of document.getAnimations()) {
+    if (animation instanceof CSSAnimation && animation.animationName === name) animation.startTime = 0
+  }
 }
