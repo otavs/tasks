@@ -3,6 +3,7 @@ import { MotionConfig } from 'framer-motion'
 import { Background } from '@/components/Background'
 import { Confetti } from '@/components/Confetti'
 import { Header } from '@/components/Header'
+import { NotificationsButton } from '@/components/NotificationsButton'
 import { ShortcutsHint } from '@/components/ShortcutsHint'
 import { TaskCreate } from '@/components/TaskCreate'
 import { TaskEdit } from '@/components/TaskEdit'
@@ -12,6 +13,7 @@ import { RecurrencesButton } from '@/components/recurrences/RecurrencesButton'
 import { RecurrencesModal } from '@/components/recurrences/RecurrencesModal'
 import { useDayRollover } from '@/hooks/useDayRollover'
 import { useNowTicker } from '@/hooks/useNowTicker'
+import { useTaskNotifications } from '@/hooks/useTaskNotifications'
 
 export default function App() {
   return (
@@ -24,7 +26,9 @@ export default function App() {
         <TaskList />
         {/* The + stays centred; secondary actions sit on its sides. */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 pt-2">
-          <div className="justify-self-end" />
+          <div className="justify-self-end">
+            <NotificationsButton />
+          </div>
           <TaskCreate />
           <div className="justify-self-start">
             <RecurrencesButton />
@@ -41,9 +45,10 @@ export default function App() {
   )
 }
 
-/** Keeps "now" ticking and follows midnight, without re-rendering the whole app. */
+/** Keeps "now" ticking, follows midnight and sends due-task pings, without re-rendering the whole app. */
 function TimeKeeper() {
   useNowTicker()
   useDayRollover()
+  useTaskNotifications()
   return null
 }

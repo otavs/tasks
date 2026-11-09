@@ -239,6 +239,32 @@
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* The bell gives a little ring when you hover its button. */
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-12deg);
+  }
+  60% {
+    transform: rotate(8deg);
+  }
+  80% {
+    transform: rotate(-4deg);
+  }
+}
+
+@media (hover: hover) {
+  .group:hover .animate-bell-hover {
+    animation: bell-ring 0.6s ease-in-out;
+  }
+}
+
 /* ---------- Overdue tasks ---------- */
 
 /*
