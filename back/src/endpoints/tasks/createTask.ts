@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
-import { DEFAULT_TIME, isValidTime, placeAt, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
+import { DEFAULT_TIME, isValidTime, MAX_TITLE_LENGTH, placeAt, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
 import { DEFAULT_TASK_TYPE, isTaskType, TASK_TYPE_ERROR } from '../../utils/taskTypes.ts'
 
 export const createTask = async (req: Request, res: Response) => {
@@ -10,6 +10,11 @@ export const createTask = async (req: Request, res: Response) => {
 
   if (!trimmedTitle || day === undefined || month === undefined || year === undefined) {
     res.status(400).json({ error: 'title, date.day, date.month, and date.year are required' })
+    return
+  }
+
+  if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+    res.status(400).json({ error: 'title is too long' })
     return
   }
 
@@ -35,7 +40,7 @@ export const createTask = async (req: Request, res: Response) => {
 
   try {
     const newTask = await prisma.$transaction(async (tx) => {
-      const where = { day, month, year }
+      const where = { userId: req.userId, day, month, year }
 
       // Clients that don't send a time get the last task's time, i.e. the task is appended.
       const lastTask = await tx.task.findFirst({ where, orderBy: [{ time: 'desc' }, { position: 'desc' }] })

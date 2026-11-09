@@ -2,9 +2,13 @@ import type { Prisma, Task } from '@prisma/client'
 
 type Tx = Prisma.TransactionClient
 export type TaskDay = { day: number; month: number; year: number }
+/** A day in one user's list. */
+export type UserDay = TaskDay & { userId: number }
 
 export const MINUTES_IN_DAY = 24 * 60
 export const DEFAULT_TIME = 9 * 60
+
+export const MAX_TITLE_LENGTH = 500
 
 export const isValidTime = (time: unknown): time is number =>
   Number.isInteger(time) && (time as number) >= 0 && (time as number) < MINUTES_IN_DAY
@@ -14,9 +18,13 @@ export const isValidTime = (time: unknown): time is number =>
  * by time first and, among tasks with the same time, by the given arrangement
  * (defaults to the current positions).
  */
-export async function resequenceDay(tx: Tx, { day, month, year }: TaskDay, arrange: (tasks: Task[]) => Task[] = t => t) {
+export async function resequenceDay(
+  tx: Tx,
+  { userId, day, month, year }: UserDay,
+  arrange: (tasks: Task[]) => Task[] = t => t
+) {
   const tasks = await tx.task.findMany({
-    where: { day, month, year },
+    where: { userId, day, month, year },
     orderBy: [{ time: 'asc' }, { position: 'asc' }, { id: 'asc' }],
   })
 

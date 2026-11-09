@@ -21,11 +21,11 @@ export const listTasks = async (req: Request, res: Response) => {
   try {
     // The client asks for this only for its "today": the start of a day creates its recurring tasks.
     if (req.query.materialize === '1') {
-      await materializeRecurrences({ day, month, year })
+      await materializeRecurrences(req.userId, { day, month, year })
     }
 
     const tasks = await prisma.task.findMany({
-      where: { day, month, year },
+      where: { userId: req.userId, day, month, year },
       orderBy: [{ time: 'asc' }, { position: 'asc' }],
     })
     res.json(tasks)

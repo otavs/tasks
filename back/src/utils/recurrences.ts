@@ -12,21 +12,39 @@ const isUniqueViolation = (error: unknown) =>
 export const appliesOn = (weekdays: number, { day, month, year }: TaskDay) =>
   (weekdays & (1 << new Date(year, month - 1, day).getDay())) !== 0
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Whether `date` can be "today" somewhere: time zones put it at most 2 days away from the server's own date. */
+const isAroundToday = ({ day, month, year }: TaskDay) => {
+  const now = new Date()
+  return Math.abs(Date.UTC(year, month - 1, day) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) <= 2 * DAY_MS
+}
+
 /**
- * Creates the tasks of every enabled recurrence that applies to `date` and hasn't run for it yet.
+ * Creates the tasks of a user's enabled recurrences that apply to `date` and haven't run for it yet.
  * Each (recurrence, day) runs at most once, so completing (deleting) its tasks never brings them back.
  *
  * `fromTime` skips items earlier than that time: used when a recurrence is created or edited mid-day,
  * so you don't get a pile of already-overdue tasks.
+ *
+ * Only "today" starts a day, so other dates are ignored: clients can't fill arbitrary days (matters for the public demo).
  */
 export async function materializeRecurrences(
+  userId: number,
   date: TaskDay,
   { fromTime, recurrenceId }: { fromTime?: number; recurrenceId?: number } = {}
 ) {
+  if (!isAroundToday(date)) return
+
   const { day, month, year } = date
 
   const recurrences = await prisma.recurrence.findMany({
-    where: { enabled: true, ...(recurrenceId !== undefined && { id: recurrenceId }), runs: { none: { day, month, year } } },
+    where: {
+      userId,
+      enabled: true,
+      ...(recurrenceId !== undefined && { id: recurrenceId }),
+      runs: { none: { day, month, year } },
+    },
     include: { items: true },
   })
 
@@ -41,9 +59,10 @@ export async function materializeRecurrences(
         const items = recurrence.items.filter((item) => fromTime === undefined || item.time >= fromTime)
         if (items.length === 0) return
 
-        const count = await tx.task.count({ where: { day, month, year } })
+        const count = await tx.task.count({ where: { userId, day, month, year } })
         await tx.task.createMany({
           data: items.map((item, i) => ({
+            userId,
             title: item.title.trim() || recurrence.name,
             time: item.time,
             type: item.type,
@@ -56,7 +75,7 @@ export async function materializeRecurrences(
         })
 
         // New tasks land at the end of their time group.
-        await resequenceDay(tx, date)
+        await resequenceDay(tx, { userId, ...date })
       })
     } catch (error) {
       if (isUniqueViolation(error)) continue // another request already did it

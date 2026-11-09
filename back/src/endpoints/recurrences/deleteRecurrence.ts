@@ -6,7 +6,7 @@ export const deleteRecurrence = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
 
   try {
-    if (!(await prisma.recurrence.findUnique({ where: { id } }))) {
+    if (!(await prisma.recurrence.findFirst({ where: { id, userId: req.userId } }))) {
       res.status(404).json({ error: 'Recurrence not found' })
       return
     }

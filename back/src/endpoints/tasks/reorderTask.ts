@@ -20,7 +20,7 @@ export const reorderTask = async (req: Request, res: Response) => {
   }
 
   try {
-    const task = await prisma.task.findUnique({ where: { id: Number(id) } })
+    const task = await prisma.task.findFirst({ where: { id: Number(id), userId: req.userId } })
 
     if (!task) {
       res.status(404).json({ error: 'Task not found' })

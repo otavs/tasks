@@ -3,6 +3,7 @@ import { MotionConfig } from 'framer-motion'
 import { Background } from '@/components/Background'
 import { Confetti } from '@/components/Confetti'
 import { Header } from '@/components/Header'
+import { LogoutButton } from '@/components/LogoutButton'
 import { NotificationsButton } from '@/components/NotificationsButton'
 import { ShortcutsHint } from '@/components/ShortcutsHint'
 import { TaskCreate } from '@/components/TaskCreate'
@@ -35,6 +36,9 @@ export default function App() {
           </div>
         </div>
         <ShortcutsHint />
+        <div className="mt-8 flex justify-center">
+          <LogoutButton />
+        </div>
       </main>
 
       <TaskEdit />

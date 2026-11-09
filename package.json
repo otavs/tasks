@@ -2,7 +2,8 @@
   "name": "tasks",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\""
+    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
+    "create-user": "npm run create-user --prefix back --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

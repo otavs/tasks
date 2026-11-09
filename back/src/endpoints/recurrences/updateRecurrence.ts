@@ -27,7 +27,7 @@ export const updateRecurrence = async (req: Request, res: Response) => {
   }
 
   try {
-    if (!(await prisma.recurrence.findUnique({ where: { id } }))) {
+    if (!(await prisma.recurrence.findFirst({ where: { id, userId: req.userId } }))) {
       res.status(404).json({ error: 'Recurrence not found' })
       return
     }
@@ -39,7 +39,7 @@ export const updateRecurrence = async (req: Request, res: Response) => {
     ])
 
     if (applyToday) {
-      await materializeRecurrences(applyToday.date, { fromTime: applyToday.fromTime, recurrenceId: id })
+      await materializeRecurrences(req.userId, applyToday.date, { fromTime: applyToday.fromTime, recurrenceId: id })
     }
 
     res.json(await prisma.recurrence.findUnique({ where: { id }, include: recurrenceInclude }))

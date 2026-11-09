@@ -7,8 +7,35 @@ datasource db {
   url      = "file:../../tasks.db"
 }
 
+/// Users are only created through the admin API (see src/admin.ts). Everything else belongs to one of them.
+model User {
+  id           Int          @id @default(autoincrement())
+  /// Lowercase; see USERNAME_PATTERN in src/utils/auth.ts.
+  username     String       @unique
+  /// scrypt hash (see src/utils/auth.ts). Null for accounts nobody can log into: "demo" (the public demo at /demo)
+  /// and "#legacy" (data from before logins existed, taken over by the first user created).
+  passwordHash String?
+  sessions     Session[]
+  tasks        Task[]
+  recurrences  Recurrence[]
+}
+
+/// A logged-in browser.
+model Session {
+  /// SHA-256 of the token in the session cookie: the database alone can't be used to log in.
+  id        String   @id
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Pushed forward while the session is used.
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
 model Task {
   id         Int     @id @default(autoincrement())
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   day        Int
   month      Int
   year       Int
@@ -24,11 +51,15 @@ model Task {
   /// The recurrence that created this task, if any.
   recurrenceId Int?
   recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, year, month, day])
 }
 
 /// A set of tasks created automatically at the start of each matching day.
 model Recurrence {
   id       Int              @id @default(autoincrement())
+  userId   Int
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   name     String
   /// Days it applies to, as a bitmask of weekdays: bit 0 = Sunday ... bit 6 = Saturday (127 = every day, 62 = Mon-Fri).
   weekdays Int              @default(127)
@@ -36,6 +67,8 @@ model Recurrence {
   items    RecurrenceItem[]
   runs     RecurrenceRun[]
   tasks    Task[]
+
+  @@index([userId])
 }
 
 model RecurrenceItem {

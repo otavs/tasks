@@ -5,8 +5,8 @@ export const deleteTask = async (req: Request, res: Response) => {
   const { id } = req.params
 
   try {
-    const taskToDelete = await prisma.task.findUnique({
-      where: { id: Number(id) },
+    const taskToDelete = await prisma.task.findFirst({
+      where: { id: Number(id), userId: req.userId },
     })
 
     if (!taskToDelete) {
@@ -14,7 +14,7 @@ export const deleteTask = async (req: Request, res: Response) => {
       return
     }
 
-    const { position, day, month, year } = taskToDelete
+    const { userId, position, day, month, year } = taskToDelete
 
     await prisma.$transaction(async (tx) => {
       await tx.task.delete({
@@ -22,7 +22,7 @@ export const deleteTask = async (req: Request, res: Response) => {
       })
 
       await tx.task.updateMany({
-        where: { position: { gt: position }, day, month, year },
+        where: { userId, position: { gt: position }, day, month, year },
         data: { position: { decrement: 1 } },
       })
     })

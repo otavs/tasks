@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
-import { isValidTime, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
+import { isValidTime, MAX_TITLE_LENGTH, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
 import { isTaskType, TASK_TYPE_ERROR } from '../../utils/taskTypes.ts'
 
 export const updateTask = async (req: Request, res: Response) => {
@@ -28,13 +28,18 @@ export const updateTask = async (req: Request, res: Response) => {
     return
   }
 
+  if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+    res.status(400).json({ error: 'title is too long' })
+    return
+  }
+
   if (time !== undefined && !isValidTime(time)) {
     res.status(400).json({ error: 'time must be an integer number of minutes between 0 and 1439' })
     return
   }
 
   try {
-    const task = await prisma.task.findUnique({ where: { id } })
+    const task = await prisma.task.findFirst({ where: { id, userId: req.userId } })
 
     if (!task) {
       res.status(404).json({ error: 'Task not found' })

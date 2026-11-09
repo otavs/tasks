@@ -12,8 +12,8 @@ export const moveTask = async (req: Request, res: Response) => {
   }
 
   try {
-    const taskToMove = await prisma.task.findUnique({
-      where: { id },
+    const taskToMove = await prisma.task.findFirst({
+      where: { id: Number(id), userId: req.userId },
     })
 
     if (!taskToMove) {
@@ -21,7 +21,7 @@ export const moveTask = async (req: Request, res: Response) => {
       return
     }
 
-    const { day: oldDay, month: oldMonth, year: oldYear } = taskToMove
+    const { userId, day: oldDay, month: oldMonth, year: oldYear } = taskToMove
 
     if (oldDay == day && oldMonth == month && oldYear == year) {
       res.json({ message: 'Task is already on this day, nothing done', task: taskToMove })
@@ -29,16 +29,16 @@ export const moveTask = async (req: Request, res: Response) => {
     }
 
     await prisma.$transaction(async (tx) => {
-      const count = await tx.task.count({ where: { day, month, year } })
+      const count = await tx.task.count({ where: { userId, day, month, year } })
 
       await tx.task.update({
-        where: { id },
+        where: { id: taskToMove.id },
         data: { position: count, day, month, year },
       })
 
       // The task keeps its time, landing at the end of that time group on the new day.
-      await resequenceDay(tx, { day, month, year }, placeLast(id))
-      await resequenceDay(tx, { day: oldDay, month: oldMonth, year: oldYear })
+      await resequenceDay(tx, { userId, day, month, year }, placeLast(taskToMove.id))
+      await resequenceDay(tx, { userId, day: oldDay, month: oldMonth, year: oldYear })
     })
 
     res.json({ message: 'Task moved successfully', task: { ...taskToMove, day, month, year } })
