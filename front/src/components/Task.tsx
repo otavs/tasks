@@ -93,11 +93,13 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
       }
       className={cn(
         'group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
-        isDragging
-          ? 'border-card-hover-border bg-card-hover shadow-lift'
-          : overdue
-            ? 'overdue-flow border-overdue-border bg-overdue shadow-card hover:border-card-hover-border hover:bg-card-hover'
-            : 'border-card-border bg-card shadow-card hover:border-card-hover-border hover:bg-card-hover'
+        isDragging ? 'shadow-lift' : 'shadow-card',
+        // Hover/drag keep the card's own colour, just a shade deeper (lighter in dark mode).
+        overdue
+          ? cn('overdue-flow border-overdue-border bg-overdue', isDragging && 'overdue-flow-active')
+          : isDragging
+            ? 'border-card-hover-border bg-card-hover'
+            : 'border-card-border bg-card hover:border-card-hover-border hover:bg-card-hover'
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{
@@ -130,7 +132,7 @@ export function Task({ task, index, appear, overdue, onComplete, ref }: Props) {
         {...listeners}
         className={cn(
           '-my-1 flex w-6 shrink-0 cursor-grab touch-none items-center justify-center self-stretch rounded-xl transition-colors active:cursor-grabbing disabled:pointer-events-none',
-          isDragging ? 'text-amber-600 dark:text-amber-300' : 'text-ink-faint/60 group-hover:text-ink-soft'
+          isDragging ? 'text-ink-soft' : 'text-ink-faint/60 group-hover:text-ink-soft'
         )}
       >
         <GripVertical className="size-4" strokeWidth={2.5} />
@@ -209,7 +211,7 @@ function IconButton({ label, className, children, ...props }: ComponentProps<'bu
       type="button"
       aria-label={label}
       className={cn(
-        'grid size-8 cursor-pointer place-items-center rounded-full text-ink-soft sm:size-9 transition-colors hover:bg-amber-500/10 hover:text-amber-700 disabled:pointer-events-none disabled:opacity-30 dark:hover:text-amber-300',
+        'grid size-8 cursor-pointer place-items-center rounded-full text-ink-soft sm:size-9 transition-colors hover:bg-ink/[0.07] hover:text-ink disabled:pointer-events-none disabled:opacity-30',
         className
       )}
       {...props}

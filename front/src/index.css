@@ -21,8 +21,8 @@
   --card: #c8ddfd;
   --card-2: #b9d3fb;
   --card-border: rgb(37 99 235 / 0.14);
-  --card-hover: #fef3c7;
-  --card-hover-border: rgb(217 119 6 / 0.25);
+  --card-hover: #b9d3fb;
+  --card-hover-border: rgb(37 99 235 / 0.26);
   --card-shadow:
     0 1px 0 rgb(255 255 255 / 0.6) inset, 0 1px 2px rgb(30 58 138 / 0.08), 0 6px 16px -8px rgb(30 58 138 / 0.25);
   --card-shadow-lift:
@@ -52,6 +52,8 @@
 
   --overdue: #ffe4e6;
   --overdue-border: rgb(225 29 72 / 0.3);
+  --overdue-border-hover: rgb(225 29 72 / 0.45);
+  --overdue-hover-filter: brightness(0.96) saturate(1.15);
   --overdue-flow-1: #fecdd3;
   --overdue-flow-2: rgb(251 113 133 / 0.55);
   --overdue-flow-3: rgb(236 72 153 / 0.22);
@@ -76,8 +78,8 @@
     --card: #1d2d4a;
     --card-2: #192842;
     --card-border: rgb(147 197 253 / 0.14);
-    --card-hover: #352d14;
-    --card-hover-border: rgb(251 191 36 / 0.3);
+    --card-hover: #243759;
+    --card-hover-border: rgb(147 197 253 / 0.26);
     --card-shadow: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 6px 16px -8px rgb(0 0 0 / 0.6);
     --card-shadow-lift: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 20px 34px -12px rgb(0 0 0 / 0.75);
 
@@ -105,6 +107,8 @@
 
     --overdue: #3a1520;
     --overdue-border: rgb(251 113 133 / 0.35);
+    --overdue-border-hover: rgb(251 113 133 / 0.5);
+    --overdue-hover-filter: brightness(1.18) saturate(1.1);
     --overdue-flow-1: #4d1b2b;
     --overdue-flow-2: rgb(190 18 60 / 0.45);
     --overdue-flow-3: rgb(236 72 153 / 0.16);
@@ -240,7 +244,7 @@
 /*
  * A slow, liquid flow of rose tones behind the card's content: two seamless gradient layers drifting
  * in opposite directions at different speeds. `--overdue-offset` puts each card at a different phase.
- * On hover the flow fades out so the usual amber hover shows through.
+ * On hover (and while dragging) the flow just gets a touch more intense.
  */
 .overdue-flow {
   isolation: isolate;
@@ -274,7 +278,7 @@
       0 0 / 200% 100% repeat-x;
   animation: overdue-flow 12s linear infinite;
   animation-delay: var(--overdue-offset, 0s);
-  transition: opacity 0.25s ease;
+  transition: filter 0.2s ease;
 }
 
 /* Shifting by exactly one tile width (-150% of a 300% tile, -200% of a 200% tile) loops seamlessly. */
@@ -291,9 +295,21 @@
   }
 }
 
+.overdue-flow-active {
+  border-color: var(--overdue-border-hover);
+}
+
+.overdue-flow-active::before {
+  filter: var(--overdue-hover-filter);
+}
+
 @media (hover: hover) {
+  .overdue-flow:hover {
+    border-color: var(--overdue-border-hover);
+  }
+
   .overdue-flow:hover::before {
-    opacity: 0;
+    filter: var(--overdue-hover-filter);
   }
 }
 
