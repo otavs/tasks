@@ -1,14 +1,20 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
 import { isValidTime, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
+import { isTaskType, TASK_TYPE_ERROR } from '../../utils/taskTypes.ts'
 
 export const updateTask = async (req: Request, res: Response) => {
   const id = Number(req.params.id)
-  const { title, time, inProgress } = req.body
+  const { title, time, inProgress, type } = req.body
   const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
-  if (title === undefined && time === undefined && inProgress === undefined) {
-    res.status(400).json({ error: 'title, time or inProgress is required' })
+  if (title === undefined && time === undefined && inProgress === undefined && type === undefined) {
+    res.status(400).json({ error: 'title, time, inProgress or type is required' })
+    return
+  }
+
+  if (type !== undefined && !isTaskType(type)) {
+    res.status(400).json({ error: TASK_TYPE_ERROR })
     return
   }
 
@@ -42,6 +48,7 @@ export const updateTask = async (req: Request, res: Response) => {
           ...(title !== undefined && { title: trimmedTitle }),
           ...(time !== undefined && { time }),
           ...(inProgress !== undefined && { inProgress }),
+          ...(type !== undefined && { type }),
         },
       })
 

@@ -6,12 +6,15 @@ import { FormEvent, useRef, useState } from 'react'
 import { Modal } from '../Modal'
 import { Switch } from '../Switch'
 import { TimeField } from '../TimeField'
+import { TypePicker } from '../TypePicker'
+import { TypeTile } from '../TypeTile'
 import { WeekdayPicker } from './WeekdayPicker'
 import { useDeleteRecurrenceMutation, useRecurrencesQuery, useSaveRecurrenceMutation } from '@/api/recurrences'
 import { isRecurrencesOpenAtom } from '@/state/state'
 import { toast } from '@/state/toast'
 import { RecurrenceModel } from '@/typings/types'
 import { cn } from '@/utils/cn'
+import { DEFAULT_TASK_TYPE, TaskType, taskType } from '@/utils/taskTypes'
 import { formatTime } from '@/utils/time'
 import { EVERY_DAY, weekdaysLabel } from '@/utils/weekdays'
 
@@ -63,8 +66,21 @@ const toInput = ({ name, weekdays, enabled, items }: RecurrenceModel) => ({
   name,
   weekdays,
   enabled,
-  items: items.map(({ title, time }) => ({ title, time })),
+  items: items.map(({ title, time, type }) => ({ title, time, type })),
 })
+
+/** The (distinct) types a recurrence creates, as a little stack of tiles. */
+function TypeStack({ items }: { items: RecurrenceModel['items'] }) {
+  const types = [...new Set(items.map(item => item.type))].slice(0, 3)
+
+  return (
+    <div className="flex shrink-0 -space-x-1.5">
+      {types.map(type => (
+        <TypeTile key={type} type={type} className="size-8 rounded-[10px] ring-2 ring-card" iconClassName="size-4" />
+      ))}
+    </div>
+  )
+}
 
 function RecurrenceList({
   onEdit,
@@ -134,7 +150,7 @@ function RecurrenceList({
                   !recurrence.enabled && 'opacity-55'
                 )}
               >
-                <Repeat className="size-4 shrink-0 text-ink-soft" strokeWidth={2.5} />
+                <TypeStack items={recurrence.items} />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold break-words">{recurrence.name}</div>
                   <div className="text-xs font-semibold text-ink-soft">
@@ -166,7 +182,7 @@ function RecurrenceList({
   )
 }
 
-type DraftItem = { key: number; title: string; time: number }
+type DraftItem = { key: number; title: string; time: number; type: TaskType }
 
 function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel; onDone: () => void }) {
   const save = useSaveRecurrenceMutation()
@@ -176,10 +192,12 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
   const [name, setName] = useState(recurrence?.name ?? '')
   const [weekdays, setWeekdays] = useState(recurrence?.weekdays ?? EVERY_DAY)
   const [items, setItems] = useState<DraftItem[]>(
-    recurrence?.items.map(item => ({ key: item.id, title: item.title, time: item.time })) ?? [
-      { key: 0, title: '', time: 9 * 60 },
+    recurrence?.items.map(item => ({ key: item.id, title: item.title, time: item.time, type: item.type })) ?? [
+      { key: 0, title: '', time: 9 * 60, type: DEFAULT_TASK_TYPE },
     ]
   )
+  // The item whose type picker is open, if any.
+  const [pickingType, setPickingType] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const trimmedName = name.trim()
@@ -188,11 +206,16 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
   const updateItem = (key: number, changes: Partial<DraftItem>) =>
     setItems(current => current.map(item => (item.key === key ? { ...item, ...changes } : item)))
 
-  // A new item comes an hour after the last one, which is usually what you want next.
+  // A new item comes an hour after the last one, of the same type, which is usually what you want next.
   const addItem = () =>
     setItems(current => [
       ...current,
-      { key: nextKey.current++, title: '', time: Math.min((current.at(-1)?.time ?? 8 * 60) + 60, 23 * 60) },
+      {
+        key: nextKey.current++,
+        title: '',
+        time: Math.min((current.at(-1)?.time ?? 8 * 60) + 60, 23 * 60),
+        type: current.at(-1)?.type ?? DEFAULT_TASK_TYPE,
+      },
     ])
 
   function handleSubmit(e: FormEvent) {
@@ -203,7 +226,7 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
       name: trimmedName,
       weekdays,
       enabled: recurrence?.enabled ?? true,
-      items: items.map(({ title, time }) => ({ title: title.trim(), time })),
+      items: items.map(({ title, time, type }) => ({ title: title.trim(), time, type })),
     })
     toast(recurrence ? 'Recurring task saved' : 'Recurring task created ↻', { tone: 'success' })
     onDone()
@@ -258,27 +281,59 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
-              className="flex items-center gap-2"
             >
-              <TimeField value={item.time} onChange={time => updateItem(item.key, { time })} />
-              <input
-                value={item.title}
-                maxLength={500}
-                onChange={e => updateItem(item.key, { title: e.target.value })}
-                placeholder={trimmedName || 'Task title'}
-                aria-label="Task title"
-                className="min-w-0 flex-1 rounded-full border border-field-border bg-field px-4 py-1.5 text-[15px] font-semibold text-ink shadow-inner shadow-slate-900/5 transition outline-none placeholder:font-medium placeholder:text-ink-faint focus:border-primary-ring focus:ring-4 focus:ring-primary-ring/15"
-              />
-              <button
-                type="button"
-                aria-label="Remove this task"
-                title="Remove"
-                disabled={items.length === 1}
-                onClick={() => setItems(current => current.filter(i => i.key !== item.key))}
-                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink disabled:pointer-events-none disabled:opacity-25"
-              >
-                <X className="size-4" strokeWidth={2.75} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label={`Type: ${taskType(item.type).label}. Change it`}
+                  title="Change the type"
+                  aria-expanded={pickingType === item.key}
+                  onClick={() => setPickingType(current => (current === item.key ? null : item.key))}
+                  className="shrink-0 cursor-pointer rounded-xl transition-transform hover:-translate-y-0.5 active:scale-90"
+                >
+                  <TypeTile type={item.type} className="size-9 rounded-xl" iconClassName="size-[18px]" />
+                </button>
+                <TimeField value={item.time} onChange={time => updateItem(item.key, { time })} />
+                <input
+                  value={item.title}
+                  maxLength={500}
+                  onChange={e => updateItem(item.key, { title: e.target.value })}
+                  placeholder={trimmedName || 'Task title'}
+                  aria-label="Task title"
+                  className="min-w-0 flex-1 rounded-full border border-field-border bg-field px-4 py-1.5 text-[15px] font-semibold text-ink shadow-inner shadow-slate-900/5 transition outline-none placeholder:font-medium placeholder:text-ink-faint focus:border-primary-ring focus:ring-4 focus:ring-primary-ring/15"
+                />
+                <button
+                  type="button"
+                  aria-label="Remove this task"
+                  title="Remove"
+                  disabled={items.length === 1}
+                  onClick={() => setItems(current => current.filter(i => i.key !== item.key))}
+                  className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink disabled:pointer-events-none disabled:opacity-25"
+                >
+                  <X className="size-4" strokeWidth={2.75} />
+                </button>
+              </div>
+
+              <AnimatePresence initial={false}>
+                {pickingType === item.key && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="overflow-hidden"
+                    // A click (or Enter) picks and closes; arrow keys just move through the options.
+                    onClick={e => (e.target as HTMLElement).closest('[role="radio"]') && setPickingType(null)}
+                  >
+                    <TypePicker
+                      value={item.type}
+                      autoFocus
+                      onChange={type => updateItem(item.key, { type })}
+                      className="p-1.5 pt-2.5"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.li>
           ))}
         </AnimatePresence>

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma.ts'
 import { isValidTime, resequenceDay, type TaskDay } from './taskOrder.ts'
+import { DEFAULT_TASK_TYPE, isTaskType, TASK_TYPE_ERROR, type TaskType } from './taskTypes.ts'
 
 export const EVERY_DAY = 0b1111111
 
@@ -45,6 +46,7 @@ export async function materializeRecurrences(
           data: items.map((item, i) => ({
             title: item.title.trim() || recurrence.name,
             time: item.time,
+            type: item.type,
             day,
             month,
             year,
@@ -67,7 +69,7 @@ export type RecurrenceInput = {
   name: string
   weekdays: number
   enabled: boolean
-  items: { title: string; time: number }[]
+  items: { title: string; time: number; type: TaskType }[]
 }
 
 /** Validates a recurrence body. Returns the clean input, or an error message. */
@@ -88,10 +90,11 @@ export function parseRecurrence(body: unknown): RecurrenceInput | string {
 
   const cleanItems: RecurrenceInput['items'] = []
   for (const item of items) {
-    const { title = '', time } = (item ?? {}) as Record<string, unknown>
+    const { title = '', time, type = DEFAULT_TASK_TYPE } = (item ?? {}) as Record<string, unknown>
     if (typeof title !== 'string' || title.length > 500) return 'item title must be a string'
     if (!isValidTime(time)) return 'item time must be an integer number of minutes between 0 and 1439'
-    cleanItems.push({ title: title.trim(), time })
+    if (!isTaskType(type)) return `item ${TASK_TYPE_ERROR}`
+    cleanItems.push({ title: title.trim(), time, type })
   }
 
   return { name: trimmedName, weekdays: weekdays as number, enabled, items: cleanItems }

@@ -25,16 +25,19 @@ export function TaskEdit() {
           subheading={formDateLabel(date, today)}
           initialTitle={taskEdit.title}
           initialTime={taskEdit.time}
+          initialType={taskEdit.type}
           submitLabel="Save"
           onCancel={close}
-          onSubmit={(title, time) => {
+          onSubmit={(title, time, type) => {
             const titleChanged = title !== taskEdit.title
             const timeChanged = time !== taskEdit.time
-            if (titleChanged || timeChanged) {
+            const typeChanged = type !== taskEdit.type
+            if (titleChanged || timeChanged || typeChanged) {
               updateTask.mutate({
                 id: taskEdit.id,
                 ...(titleChanged && { title }),
                 ...(timeChanged && { time }),
+                ...(typeChanged && { type }),
               })
             }
             close()

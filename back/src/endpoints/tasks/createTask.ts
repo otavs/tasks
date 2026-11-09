@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../../prisma.ts'
 import { DEFAULT_TIME, isValidTime, placeAt, placeLast, resequenceDay } from '../../utils/taskOrder.ts'
+import { DEFAULT_TASK_TYPE, isTaskType, TASK_TYPE_ERROR } from '../../utils/taskTypes.ts'
 
 export const createTask = async (req: Request, res: Response) => {
-  const { title, date = {}, position, time, inProgress = false } = req.body
+  const { title, date = {}, position, time, inProgress = false, type = DEFAULT_TASK_TYPE } = req.body
   const { day, month, year } = date
   const trimmedTitle = typeof title === 'string' ? title.trim() : ''
 
@@ -19,6 +20,11 @@ export const createTask = async (req: Request, res: Response) => {
 
   if (typeof inProgress !== 'boolean') {
     res.status(400).json({ error: 'inProgress must be a boolean' })
+    return
+  }
+
+  if (!isTaskType(type)) {
+    res.status(400).json({ error: TASK_TYPE_ERROR })
     return
   }
 
@@ -40,6 +46,7 @@ export const createTask = async (req: Request, res: Response) => {
           title: trimmedTitle,
           time: time ?? lastTask?.time ?? DEFAULT_TIME,
           inProgress,
+          type,
           position: count,
           ...where,
         },

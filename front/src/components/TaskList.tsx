@@ -202,6 +202,7 @@ export function TaskList() {
             date: taskDate,
             time: task.time,
             inProgress: task.inProgress,
+            type: task.type,
             position: index,
           }),
       },

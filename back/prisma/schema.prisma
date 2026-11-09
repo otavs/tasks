@@ -18,6 +18,8 @@ model Task {
   position   Int
   /// "Loading": you're already working on it (shows a spinner, skips the notification).
   inProgress Boolean @default(false)
+  /// What kind of task it is ("water", "coding"...), only for how it looks. See src/utils/taskTypes.ts.
+  type       String  @default("task")
 
   /// The recurrence that created this task, if any.
   recurrenceId Int?
@@ -44,6 +46,8 @@ model RecurrenceItem {
   title        String
   /// Minutes since midnight (0..1439).
   time         Int
+  /// The type of the task it creates.
+  type         String     @default("task")
 }
 
 /// The days a recurrence already created its tasks for, so completing them never brings them back.

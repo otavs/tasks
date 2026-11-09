@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai'
 import { request, taskListKey } from '../api'
 import { dateAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
+import { TaskType } from '@/utils/taskTypes'
 import { resequence } from '@/utils/time'
 
 type Payload = {
@@ -11,6 +12,7 @@ type Payload = {
   title?: string
   time?: number
   inProgress?: boolean
+  type?: TaskType
 }
 
 export const useUpdateTaskMutation = () => {
@@ -18,7 +20,7 @@ export const useUpdateTaskMutation = () => {
   const date = useAtomValue(dateAtom)
 
   return useMutation({
-    onMutate: async ({ id, title, time, inProgress }: Payload) => {
+    onMutate: async ({ id, title, time, inProgress, type }: Payload) => {
       const queryKey = taskListKey(date)
       await queryClient.cancelQueries({ queryKey })
 
@@ -31,6 +33,7 @@ export const useUpdateTaskMutation = () => {
         title: title ?? task.title,
         time: time ?? task.time,
         inProgress: inProgress ?? task.inProgress,
+        type: type ?? task.type,
       }
       const timeChanged = updated.time !== task.time
 

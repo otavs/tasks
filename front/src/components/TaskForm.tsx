@@ -2,14 +2,17 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 
 import { TimeField } from './TimeField'
+import { TypePicker } from './TypePicker'
+import { DEFAULT_TASK_TYPE, TaskType, taskType } from '@/utils/taskTypes'
 
 interface Props {
   heading: string
   subheading?: string
   initialTitle?: string
   initialTime: number
+  initialType?: TaskType
   submitLabel: string
-  onSubmit: (title: string, time: number) => void
+  onSubmit: (title: string, time: number, type: TaskType) => void
   onCancel: () => void
 }
 
@@ -20,12 +23,14 @@ export function TaskForm({
   subheading,
   initialTitle = '',
   initialTime,
+  initialType = DEFAULT_TASK_TYPE,
   submitLabel,
   onSubmit,
   onCancel,
 }: Props) {
   const [title, setTitle] = useState(initialTitle)
   const [time, setTime] = useState(initialTime)
+  const [type, setType] = useState(initialType)
 
   const trimmed = title.trim()
   const isValid = !!trimmed
@@ -35,7 +40,7 @@ export function TaskForm({
       className="p-5 sm:p-6"
       onSubmit={e => {
         e.preventDefault()
-        if (isValid) onSubmit(trimmed, time)
+        if (isValid) onSubmit(trimmed, time, type)
       }}
     >
       <div className="mb-3 flex items-baseline justify-between gap-3">
@@ -63,7 +68,15 @@ export function TaskForm({
         className="field-sizing-content block max-h-60 min-h-[3.25rem] w-full resize-none rounded-2xl border border-field-border bg-field px-4 py-3 text-base font-semibold text-ink shadow-inner shadow-slate-900/5 transition outline-none placeholder:font-medium placeholder:text-ink-faint focus:border-primary-ring focus:ring-4 focus:ring-primary-ring/15"
       />
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 mb-2 flex items-baseline justify-between gap-3 px-1">
+        <span className="text-[11px] font-extrabold tracking-widest text-ink-soft uppercase">Type</span>
+        <span data-type={type} className="text-sm font-bold text-type-accent">
+          {taskType(type).label}
+        </span>
+      </div>
+      <TypePicker value={type} onChange={setType} />
+
+      <div className="mt-5 flex items-center gap-2">
         <TimeField value={time} onChange={setTime} />
 
         <div className="ml-auto flex items-center gap-2">

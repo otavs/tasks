@@ -1,3 +1,5 @@
+import type { TaskType } from '@/utils/taskTypes'
+
 export type TaskDateModel = {
   day: number
   month: number
@@ -13,6 +15,8 @@ export type TaskModel = {
   position: number
   /** "Loading": already being worked on. */
   inProgress: boolean
+  /** What kind of task it is: sets its colours, icon and pattern. */
+  type: TaskType
   /** The recurrence that created it, if any. */
   recurrenceId?: number | null
   uid: number
@@ -23,6 +27,8 @@ export type RecurrenceItemModel = {
   /** Empty means "use the recurrence's name". */
   title: string
   time: number
+  /** The type of the task it creates. */
+  type: TaskType
 }
 
 export type RecurrenceModel = {

@@ -43,8 +43,8 @@ export function TaskCreate() {
           initialTime={suggestTime(tasks, isSameDay(date, today))}
           submitLabel="Add"
           onCancel={() => setIsOpen(false)}
-          onSubmit={(title, time) => {
-            createTask.mutate({ title, date, time })
+          onSubmit={(title, time, type) => {
+            createTask.mutate({ title, date, time, type })
             setIsOpen(false)
           }}
         />

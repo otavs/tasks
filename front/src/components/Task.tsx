@@ -6,11 +6,13 @@ import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'r
 
 import { RollingText } from './RollingText'
 import { TimePopover } from './TimePopover'
+import { TypeTile } from './TypeTile'
 import { VortexCheck } from './VortexCheck'
 import { isEditingTaskAtom, openTimePickerAtom, taskEditAtom } from '@/state/state'
 import { TaskModel } from '@/typings/types'
 import { cn } from '@/utils/cn'
 import { shatter } from '@/utils/shatter'
+import { DEFAULT_TASK_TYPE, taskType } from '@/utils/taskTypes'
 import { formatTime } from '@/utils/time'
 
 interface Props {
@@ -39,6 +41,8 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
   const [isShattered, setIsShattered] = useState(false)
 
   const isSaving = task.id === -1
+  // Normalized, so an unknown type (say, from a newer server) still gets a proper look.
+  const type = taskType(task.type).id
 
   const { attributes, setNodeRef, listeners, transform, isDragging } = useSortable({
     id: task.uid,
@@ -84,15 +88,20 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
           '--overdue-offset': `${index * -2.3}s`,
         } as MotionStyle
       }
+      data-type={type}
       className={cn(
-        'group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
+        'type-card group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging ? 'shadow-lift' : 'shadow-card',
-        // Hover/drag keep the card's own colour, just a shade deeper (lighter in dark mode).
-        overdue
+        // A plain task turns rose when overdue; a typed one keeps its colours, with a rose sheen.
+        overdue && type === DEFAULT_TASK_TYPE
           ? cn('overdue-flow border-overdue-border bg-overdue', isDragging && 'overdue-flow-active')
-          : isDragging
-            ? 'border-card-hover-border bg-card-hover'
-            : 'border-card-border bg-card hover:border-card-hover-border hover:bg-card-hover'
+          : cn(
+              // Hover/drag keep the card's own colour, just a shade deeper (lighter in dark mode).
+              isDragging
+                ? 'border-type-border-hover bg-type-hover'
+                : 'border-type-border bg-type hover:border-type-border-hover hover:bg-type-hover',
+              overdue && 'overdue-sheen'
+            )
       )}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{
@@ -135,6 +144,8 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
         <GripVertical className="size-4" strokeWidth={2.5} />
       </button>
 
+      <TypeTile type={type} className="size-7 rounded-[9px] sm:size-8 sm:rounded-[10px]" iconClassName="size-4" />
+
       <button
         ref={badgeRef}
         type="button"
@@ -154,7 +165,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
       </button>
 
       <div
-        className="min-w-0 flex-1 py-1 pl-0.5 text-[15px] leading-snug font-semibold break-words"
+        className="task-title min-w-0 flex-1 py-1 pl-0.5 text-[15px] leading-snug font-semibold break-words"
         onDoubleClick={() => openEdition()}
       >
         {task.title}
