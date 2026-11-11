@@ -263,9 +263,13 @@
 /* ---------- Misc animations ---------- */
 
 /*
- * The check's rainbow vortex and the "working on it" ring. CSS rather than JavaScript animations: every
- * card has one, and a JavaScript animation per card per frame kept the phone busy while typing or dragging.
- * The rotation runs on the GPU; the colours step through --c0..--c7 (set per icon, in a random order).
+ * The check's rainbow vortex and the "working on it" ring spin on the GPU (`.spin`).
+ *
+ * The vortex's colours are a strip of the rainbow sliding behind its shape (see Spinner.tsx): by one
+ * loop of colours (--loop), then back to the start, where the strip looks the same. A movement, so the
+ * GPU runs it alone, and a single animation per icon.
+ *
+ * The ring cycles its stroke colour through --c0..--c6 (set per icon, in a random order).
  */
 .spin {
   animation: spin var(--spin-duration, 10s) linear infinite;
@@ -281,39 +285,22 @@
   }
 }
 
-.rainbow-fill {
-  animation: rainbow-fill var(--rainbow-duration, 4.5s) linear infinite;
+.rainbow-strip {
+  animation-name: rainbow-strip;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes rainbow-strip {
+  to {
+    transform: translateY(var(--loop));
+  }
 }
 
 .rainbow-stroke {
   animation:
     rainbow-stroke var(--rainbow-duration, 4.5s) linear infinite,
     ring-dash 1.6s ease-in-out infinite;
-}
-
-@keyframes rainbow-fill {
-  0%,
-  100% {
-    fill: var(--c0);
-  }
-  14.3% {
-    fill: var(--c1);
-  }
-  28.6% {
-    fill: var(--c2);
-  }
-  42.9% {
-    fill: var(--c3);
-  }
-  57.1% {
-    fill: var(--c4);
-  }
-  71.4% {
-    fill: var(--c5);
-  }
-  85.7% {
-    fill: var(--c6);
-  }
 }
 
 @keyframes rainbow-stroke {
@@ -595,6 +582,20 @@
   to {
     stroke-dashoffset: -100;
   }
+}
+
+/*
+ * The copies of a card breaking like glass (utils/shatter.ts) are stills: their CSS animations (like
+ * an overdue card's flowing background) stay paused, so no shard repaints while it flies, and nothing
+ * in them gets a layer of its own (`will-change` left inline by animations), so each shard is painted
+ * once, as one piece. Only the shards' own motion runs, on the compositor.
+ */
+.shatter-layer *,
+.shatter-layer *::before,
+.shatter-layer *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+  will-change: auto !important;
 }
 
 /* ---------- Task types ---------- */

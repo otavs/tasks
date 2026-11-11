@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAtom } from 'jotai'
-import { CalendarPlus, ChevronLeft, GripVertical, Plus, Repeat, Trash2, X } from 'lucide-react'
+import { ChevronLeft, GripVertical, Plus, Repeat, RotateCcw, Trash2, X } from 'lucide-react'
 import { FormEvent, useMemo, useRef, useState } from 'react'
 
 import { Modal } from '../Modal'
@@ -88,6 +88,57 @@ function RecurrencesPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+/** "↺ Today": brings back today's tasks of one recurrence, or of all of them, that were already done or deleted. */
+function RedoTodayButton({
+  id,
+  compact,
+  beforeApply,
+  onApplied,
+}: {
+  id: number | 'all'
+  /** Just the icon on narrow screens, where the label would push the heading onto two lines. */
+  compact?: boolean
+  /** Runs first, e.g. to save the editor's changes. */
+  beforeApply?: () => Promise<unknown>
+  onApplied?: () => void
+}) {
+  const apply = useApplyRecurrenceMutation()
+  const [isBusy, setIsBusy] = useState(false)
+  const label =
+    id === 'all'
+      ? "Add today's recurring tasks again (the ones already done or deleted)"
+      : "Add today's tasks again (the ones already done or deleted)"
+
+  async function run() {
+    setIsBusy(true)
+    try {
+      await beforeApply?.()
+      const { created } = await apply.mutateAsync(id)
+      if (created === 0) toast(id === 'all' ? 'Today already has all of them' : 'Today already has all of its tasks')
+      else toast(`Added ${created === 1 ? '1 task' : `${created} tasks`} to today ↻`, { tone: 'success' })
+      onApplied?.()
+    } catch {
+      // The mutation cache already tells about the error.
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={run}
+      disabled={isBusy}
+      aria-label={label}
+      title={label}
+      className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border-2 border-transparent bg-primary/55 px-3 py-1 text-sm font-bold text-primary-ink transition-colors hover:border-primary-ring disabled:cursor-wait disabled:opacity-50"
+    >
+      <RotateCcw className={cn('size-4', isBusy && 'animate-spin [animation-direction:reverse]')} strokeWidth={2.75} />
+      <span className={cn(compact && 'max-[400px]:hidden')}>Today</span>
+    </button>
+  )
+}
+
 const toInput = ({ name, weekdays, enabled, items }: RecurrenceModel) => ({
   name,
   weekdays,
@@ -145,22 +196,20 @@ function RecurrenceList({
 
   return (
     <div className="p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id={HEADING_ID} className="font-display text-xl font-semibold">
+      <div className="mb-4 flex items-center gap-2">
+        <h2 id={HEADING_ID} className="mr-auto font-display text-xl font-semibold">
           Recurring tasks
         </h2>
+        {!!recurrences?.length && <RedoTodayButton id="all" />}
         <button
           type="button"
           onClick={onNew}
-          className="flex cursor-pointer items-center gap-1 rounded-full border-2 border-transparent bg-primary px-3 py-1 text-sm font-bold text-primary-ink transition-colors hover:border-primary-ring"
+          className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border-2 border-transparent bg-primary px-3 py-1 text-sm font-bold text-primary-ink transition-colors hover:border-primary-ring"
         >
           <Plus className="size-4" strokeWidth={3} />
           New
         </button>
       </div>
-      <p className="mt-1 mb-4 text-sm font-medium text-ink-soft">
-        Their tasks are added automatically at the start of each day.
-      </p>
 
       {isError ? (
         <p className="py-6 text-center text-sm font-semibold text-danger">Couldn't load your recurring tasks.</p>
@@ -293,7 +342,6 @@ type DraftItem = { key: number; title: string; time: number; type: TaskType }
 function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel; onDone: () => void }) {
   const save = useSaveRecurrenceMutation()
   const remove = useDeleteRecurrenceMutation()
-  const apply = useApplyRecurrenceMutation()
 
   const nextKey = useRef(1000)
   const [name, setName] = useState(recurrence?.name ?? '')
@@ -342,20 +390,6 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
     onDone()
   }
 
-  /** Brings back today's tasks that were already completed or deleted (saving any changes first). */
-  async function handleAddToToday() {
-    if (!recurrence || !isValid) return
-    try {
-      if (hasChanges()) await save.mutateAsync(draft())
-      const { created } = await apply.mutateAsync(recurrence.id)
-      if (created === 0) toast('Today already has all of its tasks')
-      else toast(`Added ${created === 1 ? '1 task' : `${created} tasks`} to today ↻`, { tone: 'success' })
-      onDone()
-    } catch {
-      // The mutation cache already tells about the error.
-    }
-  }
-
   function handleDelete() {
     if (!recurrence) return
     if (!confirmDelete) return setConfirmDelete(true)
@@ -375,9 +409,18 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
         >
           <ChevronLeft className="size-5" strokeWidth={2.75} />
         </button>
-        <h2 id={HEADING_ID} className="font-display text-xl font-semibold">
+        <h2 id={HEADING_ID} className="mr-auto font-display text-xl font-semibold">
           {recurrence ? 'Edit recurring task' : 'New recurring task'}
         </h2>
+        {recurrence && isValid && (
+          <RedoTodayButton
+            id={recurrence.id}
+            compact
+            // With unsaved changes, it's the new version that comes back.
+            beforeApply={async () => hasChanges() && (await save.mutateAsync(draft()))}
+            onApplied={onDone}
+          />
+        )}
       </div>
 
       <Label>Name</Label>
@@ -470,22 +513,6 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
         <Plus className="size-4" strokeWidth={3} />
         Add another time
       </button>
-      <p className="mt-1 px-3 text-xs font-medium text-ink-faint">An empty title uses the name.</p>
-
-      {recurrence && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-dashed border-ink/15 px-3 py-2.5">
-          <button
-            type="button"
-            onClick={handleAddToToday}
-            disabled={!isValid || apply.isPending || save.isPending}
-            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-primary/70 px-3 py-1.5 text-sm font-bold text-primary-ink transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
-          >
-            <CalendarPlus className="size-4" strokeWidth={2.5} />
-            Add to today again
-          </button>
-          <span className="text-xs font-medium text-ink-soft">Brings back the ones already done or deleted today.</span>
-        </div>
-      )}
 
       <div className="mt-5 flex items-center gap-2">
         {recurrence && (

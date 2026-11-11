@@ -84,7 +84,7 @@ function lineAngleGap(a: number, b: number) {
  * circular cracks. Fewer shards make every piece bigger, so the pattern keeps its look.
  */
 function fracture(width: number, height: number, impact: Point, maxShards: number): Polygon[] {
-  const grow = Math.sqrt(MAX_SHARDS / maxShards)
+  const grow = Math.sqrt(FULL_SHARDS / maxShards)
   const shards: Polygon[] = []
   const queue: Polygon[] = [
     [
@@ -187,36 +187,26 @@ function absolute(style: Partial<CSSStyleDeclaration>) {
   return element
 }
 
+/** Its copies are stills: see `.shatter-layer` in index.css. */
 const LAYER_CLASS = 'shatter-layer'
 
+/**
+ * Phones get fewer, bigger shards: each shard is a copy of the card the browser has to lay out and paint
+ * on the very first frame, and on a phone 64 of them froze the screen for a moment.
+ */
+const isPhone = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
+/** How many shards the pattern is drawn for: with fewer, every piece is that much bigger. */
+const FULL_SHARDS = 64
 /** Shards for a card breaking on its own. */
-const MAX_SHARDS = 64
+const MAX_SHARDS = isPhone ? 24 : FULL_SHARDS
 /** Never fewer than this, however many cards are breaking at once. */
-const MIN_SHARDS = 20
+const MIN_SHARDS = isPhone ? 10 : 20
 /**
  * Cards still flying apart. Every moving piece costs the main thread some work on every frame, so
  * while other cards are in the air a new one breaks into fewer, bigger pieces: completing several
  * tasks in a row stays smooth, as the number of pieces on screen stays about the same.
  */
 let flying = 0
-
-/**
- * The copies are stills: their CSS animations (like an overdue card's flowing background) stay
- * paused, so no shard repaints while it flies, and nothing in them gets a layer of its own
- * (`will-change` left inline by animations), so each shard is painted once, as one piece.
- * Only the shards' own motion runs, on the compositor.
- */
-function freezeCopies() {
-  if (document.getElementById(LAYER_CLASS)) return
-  const style = document.createElement('style')
-  style.id = LAYER_CLASS
-  style.textContent = `.${LAYER_CLASS} *, .${LAYER_CLASS} *::before, .${LAYER_CLASS} *::after {
-    animation-play-state: paused !important;
-    transition: none !important;
-    will-change: auto !important;
-  }`
-  document.head.appendChild(style)
-}
 
 const isPlainContainer = (element: Element) => {
   if (element instanceof SVGElement || element.children.length < 2) return false
@@ -263,6 +253,9 @@ function takeApart(element: HTMLElement, rect: DOMRect) {
       if (!r.width || !r.height) continue
       const box = { x: r.left - rect.left, y: r.top - rect.top, w: r.width, h: r.height }
       const copy = child.cloneNode(true) as HTMLElement
+      // Inner details that only matter on the live card (like the vortex's extra colour layers): every
+      // element in a copy has to be styled on the frame the card breaks, once per shard it shows in.
+      for (const detail of copy.querySelectorAll('[data-shatter-skip]')) detail.remove()
       Object.assign(copy.style, {
         position: 'absolute',
         // Inside the shell, positions start inside its border.
@@ -300,13 +293,14 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
     : { x: width * 0.85, y: height / 2 }
   const hitOnScreen = { x: rect.left + hit.x, y: rect.top + hit.y }
 
-  freezeCopies()
   const layer = absolute({
     position: 'fixed',
     inset: '0',
     pointerEvents: 'none',
     zIndex: '55',
     overflow: 'hidden',
+    // Its own world: laying it out (or the page) never involves the other.
+    contain: 'strict',
     perspective: '1000px',
     perspectiveOrigin: `${rect.left + width / 2}px ${rect.top + height / 2}px`,
   })
@@ -348,6 +342,7 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
       width: `${box.w}px`,
       height: `${box.h}px`,
       transformOrigin: `${center.x - box.x}px ${center.y - box.y}px`,
+      contain: 'strict',
     })
     const shard = absolute({ inset: '0', clipPath: `polygon(${local.map(p => `${p.x}px ${p.y}px`).join(',')})` })
 

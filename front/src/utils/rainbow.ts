@@ -16,7 +16,7 @@ export function rainbowCycle() {
   return shuffled
 }
 
-/** A random rainbow cycle as the CSS variables the `rainbow-fill` / `rainbow-stroke` animations read (index.css). */
+/** A random rainbow cycle as the CSS variables the `rainbow-stroke` animation reads (index.css). */
 export function rainbowStyle(duration: number) {
   const style: Record<string, string> = { '--rainbow-duration': `${duration}s` }
   rainbowCycle()

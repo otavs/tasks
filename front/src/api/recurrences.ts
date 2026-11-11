@@ -87,13 +87,19 @@ export const useReorderRecurrencesMutation = () => {
   })
 }
 
-/** Adds a recurrence's tasks to today again, bringing back the ones completed or deleted. Resolves to how many. */
+/**
+ * Adds a recurrence's tasks to today again (or those of every recurrence that runs today, with 'all'), bringing
+ * back the ones completed or deleted. Resolves to how many tasks were created.
+ */
 export const useApplyRecurrenceMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: number) =>
-      request<{ created: number }>(`/recurrences/${id}/apply`, { method: 'POST', json: { date: todayTaskDate() } }),
+    mutationFn: (id: number | 'all') =>
+      request<{ created: number }>(id === 'all' ? '/recurrences/apply' : `/recurrences/${id}/apply`, {
+        method: 'POST',
+        json: { date: todayTaskDate() },
+      }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: taskListKey(todayTaskDate()) }),
   })
 }

@@ -10,6 +10,10 @@ export function registerConfetti(confetti: CreateTypes | null) {
 
 const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min
 
+/** Phones get about half the particles: the full show, on top of the shattering card, made them stutter. */
+const isPhone = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
+const count = (particles: number) => (isPhone ? Math.round(particles * 0.5) : particles)
+
 /**
  * Task done! A big burst (with some stars) from the element that was clicked, and three waves of
  * fireworks around the screen.
@@ -22,9 +26,17 @@ export function celebrate(from?: DOMRect) {
       x: (from.left + from.width / 2) / window.innerWidth,
       y: (from.top + from.height / 2) / window.innerHeight,
     }
-    instance({ particleCount: 150, spread: 110, startVelocity: 45, ticks: 140, scalar: 0.95, colors: rainbow, origin })
     instance({
-      particleCount: 40,
+      particleCount: count(150),
+      spread: 110,
+      startVelocity: 45,
+      ticks: 140,
+      scalar: 0.95,
+      colors: rainbow,
+      origin,
+    })
+    instance({
+      particleCount: count(40),
       spread: 70,
       startVelocity: 38,
       ticks: 150,
@@ -44,7 +56,7 @@ export function celebrate(from?: DOMRect) {
   waves.forEach(([min, max], i) => {
     setTimeout(() => {
       instance?.({
-        particleCount: 160,
+        particleCount: count(160),
         spread: 360,
         startVelocity: 32,
         ticks: 75,
