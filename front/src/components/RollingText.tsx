@@ -1,7 +1,8 @@
 import { AnimatePresence, Variants, motion } from 'framer-motion'
+import { memo } from 'react'
 
 /** Renders text where every digit rolls like an odometer when it changes. */
-export function RollingText({
+export const RollingText = memo(function RollingText({
   text,
   direction = 1,
   separatorClassName,
@@ -23,7 +24,7 @@ export function RollingText({
       )}
     </span>
   )
-}
+})
 
 const variants: Variants = {
   enter: (direction: number) => ({ y: direction > 0 ? '65%' : '-65%', opacity: 0 }),

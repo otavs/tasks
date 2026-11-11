@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Clock3 } from 'lucide-react'
-import { KeyboardEvent, RefObject, useEffect, useRef, useState } from 'react'
+import { KeyboardEvent, RefObject, memo, useEffect, useRef, useState } from 'react'
 
 import { TimeGrid } from './TimeGrid'
+import { useCloseOnBack } from '@/hooks/useCloseOnBack'
 import { cn } from '@/utils/cn'
 import { pad2 } from '@/utils/date'
 import { TimePart, TypedDigit, timeKeyAction } from '@/utils/timeKeys'
@@ -18,7 +19,7 @@ interface Props {
  * picking an hour moves on to the minutes. Keyboard: type digits, ↑/↓ to adjust, ←/→ to switch part,
  * Enter to submit the form, Esc to close the grid.
  */
-export function TimeField({ value, onChange }: Props) {
+export const TimeField = memo(function TimeField({ value, onChange }: Props) {
   const hour = Math.floor(value / 60)
   const minute = value % 60
 
@@ -27,6 +28,9 @@ export function TimeField({ value, onChange }: Props) {
   const hourRef = useRef<HTMLDivElement>(null)
   const minuteRef = useRef<HTMLDivElement>(null)
   const typed = useRef<TypedDigit>(null)
+
+  // Back closes just the grid, not the whole modal.
+  useCloseOnBack(!!open, () => setOpen(null))
 
   // Close the grid when clicking anywhere else.
   useEffect(() => {
@@ -146,7 +150,7 @@ export function TimeField({ value, onChange }: Props) {
       </AnimatePresence>
     </div>
   )
-}
+})
 
 function Segment({
   segmentRef,

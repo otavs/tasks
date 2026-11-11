@@ -22,8 +22,14 @@ export const createRecurrence = async (req: Request, res: Response) => {
 
   try {
     const { items, ...fields } = input
+    // New ones go to the end of the list.
+    const last = await prisma.recurrence.findFirst({
+      where: { userId: req.userId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    })
     const recurrence = await prisma.recurrence.create({
-      data: { ...fields, userId: req.userId, items: { create: items } },
+      data: { ...fields, userId: req.userId, position: (last?.position ?? -1) + 1, items: { create: items } },
     })
 
     // Starting mid-day: today only gets the items that haven't passed yet.

@@ -15,7 +15,7 @@ export const appliesOn = (weekdays: number, { day, month, year }: TaskDay) =>
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Whether `date` can be "today" somewhere: time zones put it at most 2 days away from the server's own date. */
-const isAroundToday = ({ day, month, year }: TaskDay) => {
+export const isAroundToday = ({ day, month, year }: TaskDay) => {
   const now = new Date()
   return Math.abs(Date.UTC(year, month - 1, day) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) <= 2 * DAY_MS
 }
@@ -84,6 +84,66 @@ export async function materializeRecurrences(
   }
 }
 
+/**
+ * Adds a recurrence's tasks to `date` by hand, even if that day already got them, or the recurrence is paused or
+ * doesn't apply that day. Items whose task is still there (same title and time) are skipped, so it brings back
+ * what was completed or deleted without doubling the rest. Returns how many tasks it created.
+ */
+export async function recreateRecurrenceTasks(
+  userId: number,
+  recurrence: { id: number; name: string; items: { title: string; time: number; type: string }[] },
+  date: TaskDay
+) {
+  const { day, month, year } = date
+  const titleOf = (item: { title: string }) => item.title.trim() || recurrence.name
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const existing = await tx.task.findMany({
+        where: { userId, day, month, year, recurrenceId: recurrence.id },
+        select: { title: true, time: true },
+      })
+      const left = existing.map((task) => `${task.time}|${task.title}`)
+      const missing = recurrence.items.filter((item) => {
+        const index = left.indexOf(`${item.time}|${titleOf(item)}`)
+        if (index === -1) return true
+        left.splice(index, 1) // each existing task only covers one item
+        return false
+      })
+
+      // The day counts as done, so the automatic run doesn't add them all again later.
+      await tx.recurrenceRun.upsert({
+        where: { recurrenceId_day_month_year: { recurrenceId: recurrence.id, day, month, year } },
+        create: { recurrenceId: recurrence.id, day, month, year },
+        update: {},
+      })
+
+      if (missing.length === 0) return 0
+
+      const count = await tx.task.count({ where: { userId, day, month, year } })
+      await tx.task.createMany({
+        data: missing.map((item, i) => ({
+          userId,
+          title: titleOf(item),
+          time: item.time,
+          type: item.type,
+          day,
+          month,
+          year,
+          position: count + i,
+          recurrenceId: recurrence.id,
+        })),
+      })
+      await resequenceDay(tx, { userId, ...date })
+      return missing.length
+    })
+  } catch (error) {
+    // The automatic run marked the day at the same moment: its tasks are being created right now.
+    if (isUniqueViolation(error)) return 0
+    throw error
+  }
+}
+
 export type RecurrenceInput = {
   name: string
   weekdays: number
@@ -124,13 +184,18 @@ export function parseApplyToday(body: unknown): { date: TaskDay; fromTime: numbe
   const { applyToday } = (body ?? {}) as Record<string, unknown>
   if (applyToday === undefined) return undefined
 
-  const { date, fromTime } = (applyToday ?? {}) as { date?: Partial<TaskDay>; fromTime?: unknown }
-  const { day, month, year } = date ?? {}
-  if (![day, month, year].every(Number.isInteger) || !isValidTime(fromTime)) {
-    return 'applyToday needs date.day, date.month, date.year and a valid fromTime'
-  }
+  const { date, fromTime } = (applyToday ?? {}) as { date?: unknown; fromTime?: unknown }
+  const day = parseTaskDay(date)
+  if (!day || !isValidTime(fromTime)) return 'applyToday needs date.day, date.month, date.year and a valid fromTime'
 
-  return { date: { day: day!, month: month!, year: year! }, fromTime }
+  return { date: day, fromTime }
+}
+
+/** A `{ day, month, year }` from a request body, or undefined if it isn't one. */
+export function parseTaskDay(value: unknown): TaskDay | undefined {
+  const { day, month, year } = (value ?? {}) as Partial<Record<keyof TaskDay, unknown>>
+  if (![day, month, year].every(Number.isInteger)) return undefined
+  return { day: day as number, month: month as number, year: year as number }
 }
 
 export const recurrenceInclude = { items: { orderBy: [{ time: 'asc' as const }, { id: 'asc' as const }] } }

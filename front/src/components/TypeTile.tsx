@@ -1,8 +1,10 @@
+import { memo } from 'react'
+
 import { cn } from '@/utils/cn'
 import { TaskType, taskType } from '@/utils/taskTypes'
 
 /** A type's icon on its little glossy tile, in the type's colours. */
-export function TypeTile({
+export const TypeTile = memo(function TypeTile({
   type,
   className,
   iconClassName,
@@ -18,4 +20,4 @@ export function TypeTile({
       <Icon aria-hidden className={iconClassName} strokeWidth={2.25} />
     </span>
   )
-}
+})

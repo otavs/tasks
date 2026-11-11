@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check } from 'lucide-react'
+import { memo } from 'react'
 
 import { LoadingRing } from './icons/LoadingRing'
 import { Spinner } from './icons/Spinner'
@@ -8,7 +9,13 @@ import { Spinner } from './icons/Spinner'
  * The rainbow vortex (or, for a task you're working on, a loading ring) that turns into
  * a check mark when you're about to complete the task.
  */
-export function VortexCheck({ active, inProgress = false }: { active: boolean; inProgress?: boolean }) {
+export const VortexCheck = memo(function VortexCheck({
+  active,
+  inProgress = false,
+}: {
+  active: boolean
+  inProgress?: boolean
+}) {
   return (
     <div className="relative grid size-8 place-items-center">
       {/* No initial={false} here: it would also skip starting the infinite spin of the icons. */}
@@ -38,4 +45,4 @@ export function VortexCheck({ active, inProgress = false }: { active: boolean; i
       </AnimatePresence>
     </div>
   )
-}
+})

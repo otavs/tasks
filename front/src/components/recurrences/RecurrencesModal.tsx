@@ -1,7 +1,24 @@
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAtom } from 'jotai'
-import { ChevronLeft, Plus, Repeat, Trash2, X } from 'lucide-react'
-import { FormEvent, useRef, useState } from 'react'
+import { CalendarPlus, ChevronLeft, GripVertical, Plus, Repeat, Trash2, X } from 'lucide-react'
+import { FormEvent, useMemo, useRef, useState } from 'react'
 
 import { Modal } from '../Modal'
 import { Switch } from '../Switch'
@@ -9,7 +26,14 @@ import { TimeField } from '../TimeField'
 import { TypePicker } from '../TypePicker'
 import { TypeTile } from '../TypeTile'
 import { WeekdayPicker } from './WeekdayPicker'
-import { useDeleteRecurrenceMutation, useRecurrencesQuery, useSaveRecurrenceMutation } from '@/api/recurrences'
+import {
+  useApplyRecurrenceMutation,
+  useDeleteRecurrenceMutation,
+  useRecurrencesQuery,
+  useReorderRecurrencesMutation,
+  useSaveRecurrenceMutation,
+} from '@/api/recurrences'
+import { useCloseOnBack } from '@/hooks/useCloseOnBack'
 import { isRecurrencesOpenAtom } from '@/state/state'
 import { toast } from '@/state/toast'
 import { RecurrenceModel } from '@/typings/types'
@@ -34,6 +58,8 @@ export function RecurrencesModal() {
 
 function RecurrencesPanel({ onClose }: { onClose: () => void }) {
   const [editing, setEditing] = useState<RecurrenceModel | 'new' | null>(null)
+  // Back from the editor goes to the list, like its ← button.
+  useCloseOnBack(!!editing, () => setEditing(null))
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -91,8 +117,31 @@ function RecurrenceList({
   onNew: () => void
   onClose: () => void
 }) {
-  const { data: recurrences, isPending, isError } = useRecurrencesQuery()
+  const { data, isPending, isError } = useRecurrencesQuery()
   const save = useSaveRecurrenceMutation()
+  const reorder = useReorderRecurrencesMutation()
+
+  // The order from the last drop, until it's saved. It's set in the same render as the drop, so the row doesn't
+  // jump back to where it was for a moment.
+  const [droppedOrder, setDroppedOrder] = useState<number[] | null>(null)
+  const recurrences = useMemo(() => {
+    if (!data || !droppedOrder) return data
+    const rank = (id: number) => (droppedOrder.includes(id) ? droppedOrder.indexOf(id) : Infinity)
+    return [...data].sort((a, b) => rank(a.id) - rank(b.id))
+  }, [data, droppedOrder])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!recurrences || !over || active.id === over.id) return
+    const ids = recurrences.map(recurrence => recurrence.id)
+    const order = arrayMove(ids, ids.indexOf(Number(active.id)), ids.indexOf(Number(over.id)))
+    setDroppedOrder(order)
+    reorder.mutate(order, { onSettled: () => setDroppedOrder(null) })
+  }
 
   return (
     <div className="p-5 sm:p-6">
@@ -117,7 +166,7 @@ function RecurrenceList({
         <p className="py-6 text-center text-sm font-semibold text-danger">Couldn't load your recurring tasks.</p>
       ) : isPending ? (
         <div className="h-16 animate-pulse rounded-2xl bg-card/60" />
-      ) : recurrences.length === 0 ? (
+      ) : !recurrences || recurrences.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-ink/15 px-6 py-8 text-center">
           <Repeat className="size-7 text-ink-faint" strokeWidth={2.25} />
           <p className="text-sm font-semibold text-ink-soft">
@@ -132,41 +181,25 @@ function RecurrenceList({
           </button>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {recurrences.map(recurrence => (
-            <li key={recurrence.id}>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => onEdit(recurrence)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onEdit(recurrence)
-                  }
-                }}
-                className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-2xl border border-card-border bg-card px-4 py-3 shadow-card transition-[background-color,opacity] hover:bg-card-hover',
-                  !recurrence.enabled && 'opacity-55'
-                )}
-              >
-                <TypeStack items={recurrence.items} />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold break-words">{recurrence.name}</div>
-                  <div className="text-xs font-semibold text-ink-soft">
-                    {weekdaysLabel(recurrence.weekdays)} ·{' '}
-                    {recurrence.items.map(item => formatTime(item.time)).join(' · ')}
-                  </div>
-                </div>
-                <Switch
-                  checked={recurrence.enabled}
-                  label={recurrence.enabled ? 'Pause this recurrence' : 'Resume this recurrence'}
-                  onChange={enabled => save.mutate({ id: recurrence.id, ...toInput(recurrence), enabled })}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={recurrences.map(recurrence => recurrence.id)} strategy={verticalListSortingStrategy}>
+            <ul className="flex flex-col gap-2">
+              {recurrences.map(recurrence => (
+                <RecurrenceRow
+                  key={recurrence.id}
+                  recurrence={recurrence}
+                  onEdit={onEdit}
+                  onToggle={enabled => save.mutate({ id: recurrence.id, ...toInput(recurrence), enabled })}
                 />
-              </div>
-            </li>
-          ))}
-        </ul>
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       <div className="mt-5 flex justify-end">
@@ -182,11 +215,85 @@ function RecurrenceList({
   )
 }
 
+/** A recurrence in the list: click to edit it, drag its grip to move it. */
+function RecurrenceRow({
+  recurrence,
+  onEdit,
+  onToggle,
+}: {
+  recurrence: RecurrenceModel
+  onEdit: (recurrence: RecurrenceModel) => void
+  onToggle: (enabled: boolean) => void
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: recurrence.id,
+  })
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: transform ? `translate3d(0, ${Math.round(transform.y)}px, 0)` : undefined, transition }}
+      className={cn('relative', isDragging && 'z-10')}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onEdit(recurrence)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onEdit(recurrence)
+          }
+        }}
+        className={cn(
+          'flex cursor-pointer items-center gap-2.5 rounded-2xl border border-card-border bg-card py-3 pr-4 pl-1.5 transition-[background-color,opacity,box-shadow,scale] duration-200 hover:bg-card-hover',
+          isDragging ? 'scale-[1.02] bg-card-hover shadow-lift' : 'shadow-card',
+          !recurrence.enabled && !isDragging && 'opacity-55'
+        )}
+      >
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          aria-label={`Drag to reorder ${recurrence.name}`}
+          title="Drag to reorder"
+          {...attributes}
+          {...listeners}
+          // The row opens the editor on click and on Enter: the handle keeps both to itself.
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            listeners?.onKeyDown?.(e)
+            e.stopPropagation()
+          }}
+          className={cn(
+            '-my-2 flex w-6 shrink-0 cursor-grab touch-none items-center justify-center self-stretch rounded-xl transition-colors active:cursor-grabbing',
+            isDragging ? 'text-ink-soft' : 'text-ink-faint/60 hover:text-ink-soft'
+          )}
+        >
+          <GripVertical className="size-4" strokeWidth={2.5} />
+        </button>
+        <TypeStack items={recurrence.items} />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold break-words">{recurrence.name}</div>
+          <div className="text-xs font-semibold text-ink-soft">
+            {weekdaysLabel(recurrence.weekdays)} · {recurrence.items.map(item => formatTime(item.time)).join(' · ')}
+          </div>
+        </div>
+        <Switch
+          checked={recurrence.enabled}
+          label={recurrence.enabled ? 'Pause this recurrence' : 'Resume this recurrence'}
+          onChange={onToggle}
+        />
+      </div>
+    </li>
+  )
+}
+
 type DraftItem = { key: number; title: string; time: number; type: TaskType }
 
 function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel; onDone: () => void }) {
   const save = useSaveRecurrenceMutation()
   const remove = useDeleteRecurrenceMutation()
+  const apply = useApplyRecurrenceMutation()
 
   const nextKey = useRef(1000)
   const [name, setName] = useState(recurrence?.name ?? '')
@@ -218,18 +325,35 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
       },
     ])
 
+  const input = () => ({
+    name: trimmedName,
+    weekdays,
+    enabled: recurrence?.enabled ?? true,
+    items: items.map(({ title, time, type }) => ({ title: title.trim(), time, type })),
+  })
+  const draft = () => ({ id: recurrence?.id, ...input() })
+  const hasChanges = () => !recurrence || JSON.stringify(input()) !== JSON.stringify(toInput(recurrence))
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isValid) return
-    save.mutate({
-      id: recurrence?.id,
-      name: trimmedName,
-      weekdays,
-      enabled: recurrence?.enabled ?? true,
-      items: items.map(({ title, time, type }) => ({ title: title.trim(), time, type })),
-    })
+    save.mutate(draft())
     toast(recurrence ? 'Recurring task saved' : 'Recurring task created ↻', { tone: 'success' })
     onDone()
+  }
+
+  /** Brings back today's tasks that were already completed or deleted (saving any changes first). */
+  async function handleAddToToday() {
+    if (!recurrence || !isValid) return
+    try {
+      if (hasChanges()) await save.mutateAsync(draft())
+      const { created } = await apply.mutateAsync(recurrence.id)
+      if (created === 0) toast('Today already has all of its tasks')
+      else toast(`Added ${created === 1 ? '1 task' : `${created} tasks`} to today ↻`, { tone: 'success' })
+      onDone()
+    } catch {
+      // The mutation cache already tells about the error.
+    }
   }
 
   function handleDelete() {
@@ -347,6 +471,21 @@ function RecurrenceEditor({ recurrence, onDone }: { recurrence?: RecurrenceModel
         Add another time
       </button>
       <p className="mt-1 px-3 text-xs font-medium text-ink-faint">An empty title uses the name.</p>
+
+      {recurrence && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-dashed border-ink/15 px-3 py-2.5">
+          <button
+            type="button"
+            onClick={handleAddToToday}
+            disabled={!isValid || apply.isPending || save.isPending}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-primary/70 px-3 py-1.5 text-sm font-bold text-primary-ink transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
+          >
+            <CalendarPlus className="size-4" strokeWidth={2.5} />
+            Add to today again
+          </button>
+          <span className="text-xs font-medium text-ink-soft">Brings back the ones already done or deleted today.</span>
+        </div>
+      )}
 
       <div className="mt-5 flex items-center gap-2">
         {recurrence && (

@@ -121,6 +121,7 @@ export function TaskList() {
                     index={index}
                     appear={appear}
                     overdue={isOverdue(task)}
+                    layoutKey={tasks}
                     onComplete={handleComplete}
                     onTimeChange={(task, time) => updateTask.mutate({ id: task.id, time })}
                     onToggleProgress={task => updateTask.mutate({ id: task.id, inProgress: !task.inProgress })}

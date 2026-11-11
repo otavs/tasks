@@ -199,12 +199,37 @@
 
 /* ---------- Background blobs ---------- */
 
+/*
+ * A soft blob of colour (`--blob`), drifting. It used to be a circle with `filter: blur(70px)`, but phones
+ * redo a blur that big on every frame of the drift, which slowed everything else down. This gradient draws
+ * the same soft edge (a gaussian falloff around the circle's edge, ±2σ = 140px) once, and the drift only
+ * moves it around.
+ */
 .blob {
   position: absolute;
-  border-radius: 9999px;
-  filter: blur(70px);
   opacity: 0.7;
   will-change: transform;
+}
+
+.blob::before {
+  content: '';
+  position: absolute;
+  inset: -150px;
+  /* 100% is the circle's edge + 150px. The stops follow a gaussian's curve, every half σ (35px). */
+  background: radial-gradient(
+    closest-side,
+    var(--blob) calc(100% - 325px),
+    color-mix(in srgb, var(--blob) 98%, transparent) calc(100% - 290px),
+    color-mix(in srgb, var(--blob) 93%, transparent) calc(100% - 255px),
+    color-mix(in srgb, var(--blob) 84%, transparent) calc(100% - 220px),
+    color-mix(in srgb, var(--blob) 69%, transparent) calc(100% - 185px),
+    color-mix(in srgb, var(--blob) 50%, transparent) calc(100% - 150px),
+    color-mix(in srgb, var(--blob) 31%, transparent) calc(100% - 115px),
+    color-mix(in srgb, var(--blob) 16%, transparent) calc(100% - 80px),
+    color-mix(in srgb, var(--blob) 7%, transparent) calc(100% - 45px),
+    color-mix(in srgb, var(--blob) 2%, transparent) calc(100% - 10px),
+    transparent
+  );
 }
 
 @keyframes drift-a {
@@ -236,6 +261,131 @@
 }
 
 /* ---------- Misc animations ---------- */
+
+/*
+ * The check's rainbow vortex and the "working on it" ring. CSS rather than JavaScript animations: every
+ * card has one, and a JavaScript animation per card per frame kept the phone busy while typing or dragging.
+ * The rotation runs on the GPU; the colours step through --c0..--c7 (set per icon, in a random order).
+ */
+.spin {
+  animation: spin var(--spin-duration, 10s) linear infinite;
+}
+
+.spin-reverse {
+  animation-direction: reverse;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rainbow-fill {
+  animation: rainbow-fill var(--rainbow-duration, 4.5s) linear infinite;
+}
+
+.rainbow-stroke {
+  animation:
+    rainbow-stroke var(--rainbow-duration, 4.5s) linear infinite,
+    ring-dash 1.6s ease-in-out infinite;
+}
+
+@keyframes rainbow-fill {
+  0%,
+  100% {
+    fill: var(--c0);
+  }
+  14.3% {
+    fill: var(--c1);
+  }
+  28.6% {
+    fill: var(--c2);
+  }
+  42.9% {
+    fill: var(--c3);
+  }
+  57.1% {
+    fill: var(--c4);
+  }
+  71.4% {
+    fill: var(--c5);
+  }
+  85.7% {
+    fill: var(--c6);
+  }
+}
+
+@keyframes rainbow-stroke {
+  0%,
+  100% {
+    stroke: var(--c0);
+  }
+  14.3% {
+    stroke: var(--c1);
+  }
+  28.6% {
+    stroke: var(--c2);
+  }
+  42.9% {
+    stroke: var(--c3);
+  }
+  57.1% {
+    stroke: var(--c4);
+  }
+  71.4% {
+    stroke: var(--c5);
+  }
+  85.7% {
+    stroke: var(--c6);
+  }
+}
+
+@keyframes ring-dash {
+  0%,
+  100% {
+    stroke-dasharray: 0.12 1;
+  }
+  50% {
+    stroke-dasharray: 0.5 1;
+  }
+}
+
+/* A drop zone (move to another day) breathing while you drag, and its chevron nudging that way. */
+@keyframes zone-breathe {
+  0%,
+  100% {
+    transform: scale(0.97);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+.animate-zone-breathe {
+  animation: zone-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes nudge-x {
+  50% {
+    transform: translateX(calc(var(--nudge, 1) * 4px));
+  }
+}
+
+.animate-nudge-x {
+  animation: nudge-x 1.2s ease-in-out infinite;
+}
+
+/* The duck, bobbing. */
+@keyframes bob {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-bob {
+  animation: bob 3.2s ease-in-out infinite;
+}
 
 @keyframes shimmer {
   from {
@@ -279,56 +429,78 @@
 /* ---------- Overdue tasks ---------- */
 
 /*
- * A slow, liquid flow of rose tones behind the card's content: two seamless gradient layers drifting
- * in opposite directions at different speeds. `--overdue-offset` puts each card at a different phase.
- * On hover (and while dragging) the flow just gets a touch more intense.
+ * A slow, liquid flow of rose tones behind the card's content: two seamless gradient bands drifting
+ * in opposite directions at different speeds (drawn by OverdueFlow in Task.tsx). `--overdue-offset`
+ * puts each card at a different phase. On hover (and while dragging) the flow gets a touch more intense.
+ *
+ * The bands are wider than the card and slide with `transform`, which the GPU does on its own: animating
+ * `background-position` instead would repaint every overdue card on every frame.
  */
 .overdue-flow {
   isolation: isolate;
 }
 
-.overdue-flow::before {
-  content: '';
+.overdue-flow-layer {
   position: absolute;
   inset: 0;
   z-index: -1;
+  overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--overdue-flow-3) 22%,
-        transparent 45%,
-        var(--overdue-flow-4) 70%,
-        transparent 100%
-      )
-      0 0 / 300% 100% repeat-x,
-    linear-gradient(
-        90deg,
-        var(--overdue) 0%,
-        var(--overdue-flow-1) 25%,
-        var(--overdue-flow-2) 50%,
-        var(--overdue-flow-1) 75%,
-        var(--overdue) 100%
-      )
-      0 0 / 200% 100% repeat-x;
-  animation: overdue-flow 12s linear infinite;
-  animation-delay: var(--overdue-offset, 0s);
   transition: filter 0.2s ease;
 }
 
-/* Shifting by exactly one tile width (-150% of a 300% tile, -200% of a 200% tile) loops seamlessly. */
-@keyframes overdue-flow {
-  from {
-    background-position:
-      0% 0,
-      0% 0;
-  }
+.overdue-flow-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  animation: 12s linear infinite;
+  animation-delay: var(--overdue-offset, 0s);
+  will-change: transform;
+}
+
+/* The base colours: tiles twice the card's width, drifting right by one tile per loop. */
+.overdue-flow-base {
+  left: -200%;
+  width: 400%;
+  background: linear-gradient(
+      90deg,
+      var(--overdue) 0%,
+      var(--overdue-flow-1) 25%,
+      var(--overdue-flow-2) 50%,
+      var(--overdue-flow-1) 75%,
+      var(--overdue) 100%
+    )
+    0 0 / 50% 100% repeat-x;
+  animation-name: overdue-flow-base;
+}
+
+/* The sheen on top: tiles three times the card's width, drifting left by one tile per loop. */
+.overdue-flow-sheen {
+  left: 0;
+  width: 600%;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--overdue-flow-3) 22%,
+      transparent 45%,
+      var(--overdue-flow-4) 70%,
+      transparent 100%
+    )
+    0 0 / 50% 100% repeat-x;
+  animation-name: overdue-flow-sheen;
+}
+
+/* Percentages of a band's own width: one tile is 50% of it, so the loop is seamless. */
+@keyframes overdue-flow-base {
   to {
-    background-position:
-      150% 0,
-      -200% 0;
+    transform: translateX(50%);
+  }
+}
+
+@keyframes overdue-flow-sheen {
+  to {
+    transform: translateX(-50%);
   }
 }
 
@@ -336,7 +508,7 @@
   border-color: var(--overdue-border-hover);
 }
 
-.overdue-flow-active::before {
+.overdue-flow-active .overdue-flow-layer {
   filter: var(--overdue-hover-filter);
 }
 
@@ -345,7 +517,7 @@
     border-color: var(--overdue-border-hover);
   }
 
-  .overdue-flow:hover::before {
+  .overdue-flow:hover .overdue-flow-layer {
     filter: var(--overdue-hover-filter);
   }
 }
@@ -779,7 +951,11 @@
   .animate-drift-b,
   .animate-drift-c,
   .animate-shimmer,
-  .overdue-flow::before,
+  .animate-zone-breathe,
+  .animate-nudge-x,
+  .animate-bob,
+  .spin,
+  .overdue-flow-band,
   .overdue-ring::before {
     animation: none;
   }

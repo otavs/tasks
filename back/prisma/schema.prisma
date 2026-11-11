@@ -64,6 +64,8 @@ model Recurrence {
   /// Days it applies to, as a bitmask of weekdays: bit 0 = Sunday ... bit 6 = Saturday (127 = every day, 62 = Mon-Fri).
   weekdays Int              @default(127)
   enabled  Boolean          @default(true)
+  /// Order in the list of recurrences (0 first), set by dragging them around.
+  position Int              @default(0)
   items    RecurrenceItem[]
   runs     RecurrenceRun[]
   tasks    Task[]

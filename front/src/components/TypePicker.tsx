@@ -1,4 +1,4 @@
-import { KeyboardEvent, useRef } from 'react'
+import { KeyboardEvent, memo, useRef } from 'react'
 
 import { cn } from '@/utils/cn'
 import { TASK_TYPES, TaskType } from '@/utils/taskTypes'
@@ -15,7 +15,7 @@ interface Props {
  * Every type as a tile, in a grid: soft tiles in the type's tint, the chosen one in full colour.
  * A radio group: one tab stop, arrow keys move (up and down by whole rows).
  */
-export function TypePicker({ value, onChange, autoFocus, className }: Props) {
+export const TypePicker = memo(function TypePicker({ value, onChange, autoFocus, className }: Props) {
   const groupRef = useRef<HTMLDivElement>(null)
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
@@ -65,4 +65,4 @@ export function TypePicker({ value, onChange, autoFocus, className }: Props) {
       })}
     </div>
   )
-}
+})

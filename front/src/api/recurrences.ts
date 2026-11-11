@@ -60,3 +60,40 @@ export const useDeleteRecurrenceMutation = () => {
     },
   })
 }
+
+/** Saves the new order of the list (all the ids, first to last). Optimistic. */
+export const useReorderRecurrencesMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (ids: number[]) => request('/recurrences/reorder', { method: 'PUT', json: { ids } }),
+
+    onMutate: async ids => {
+      await queryClient.cancelQueries({ queryKey: recurrencesKey })
+      const previous = queryClient.getQueryData<RecurrenceModel[]>(recurrencesKey)
+      queryClient.setQueryData<RecurrenceModel[]>(recurrencesKey, (list = []) => {
+        const byId = new Map(list.map(recurrence => [recurrence.id, recurrence]))
+        const ordered = ids.flatMap(id => byId.get(id) ?? [])
+        return [...ordered, ...list.filter(recurrence => !ids.includes(recurrence.id))]
+      })
+      return { previous }
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(recurrencesKey, context.previous)
+    },
+
+    onSettled: () => queryClient.invalidateQueries({ queryKey: recurrencesKey }),
+  })
+}
+
+/** Adds a recurrence's tasks to today again, bringing back the ones completed or deleted. Resolves to how many. */
+export const useApplyRecurrenceMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      request<{ created: number }>(`/recurrences/${id}/apply`, { method: 'POST', json: { date: todayTaskDate() } }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: taskListKey(todayTaskDate()) }),
+  })
+}

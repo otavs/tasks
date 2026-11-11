@@ -22,7 +22,8 @@ export default function App() {
       <TimeKeeper />
       <Background />
 
-      <main className="mx-auto w-full max-w-5xl px-3 pb-28 sm:px-6">
+      {/* At least a screen tall, so Exit sits at the very bottom even with only a few tasks. */}
+      <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-3 sm:px-6">
         <Header />
         <TaskList />
         {/* The + stays centred; secondary actions sit on its sides. */}
@@ -36,7 +37,7 @@ export default function App() {
           </div>
         </div>
         <ShortcutsHint />
-        <div className="mt-8 flex justify-center">
+        <div className="mt-auto flex justify-center pt-12 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <LogoutButton />
         </div>
       </main>

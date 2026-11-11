@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { AnimatePresence, MotionStyle, motion, useAnimate } from 'framer-motion'
 import { useAtom, useSetAtom } from 'jotai'
 import { GripVertical, Pause, Pencil, Play, Repeat } from 'lucide-react'
-import { ComponentProps, Ref, useCallback, useEffect, useRef, useState } from 'react'
+import { ComponentProps, Ref, memo, useCallback, useEffect, useRef, useState } from 'react'
 
 import { RollingText } from './RollingText'
 import { TimePopover } from './TimePopover'
@@ -22,6 +22,11 @@ interface Props {
   appear: boolean
   /** Its time has already passed. */
   overdue: boolean
+  /**
+   * Changes whenever the list's layout may have changed (the day's tasks were updated). The card only
+   * measures itself for layout animations then: while dragging, every card re-renders on every move.
+   */
+  layoutKey: unknown
   onComplete: (task: TaskModel, checkRect?: DOMRect) => void
   onTimeChange: (task: TaskModel, time: number) => void
   onToggleProgress: (task: TaskModel) => void
@@ -29,7 +34,17 @@ interface Props {
   ref?: Ref<HTMLDivElement>
 }
 
-export function Task({ task, index, appear, overdue, onComplete, onTimeChange, onToggleProgress, ref }: Props) {
+export function Task({
+  task,
+  index,
+  appear,
+  overdue,
+  layoutKey,
+  onComplete,
+  onTimeChange,
+  onToggleProgress,
+  ref,
+}: Props) {
   const setIsEditingTask = useSetAtom(isEditingTaskAtom)
   const setTaskEdit = useSetAtom(taskEditAtom)
   const [openTimePicker, setOpenTimePicker] = useAtom(openTimePickerAtom)
@@ -75,6 +90,8 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
 
   // A typed overdue card is ringed in rose (unless you're on it: then the comet has the border).
   const isRinged = overdue && !task.inProgress && type !== DEFAULT_TASK_TYPE
+  // A plain task turns rose when overdue, with a flowing background.
+  const isFlowing = overdue && type === DEFAULT_TASK_TYPE
   const hasComet = task.inProgress && !isSaving
   // All the rings breathe in step, and all the comets circle in step. CSS starts each animation when
   // its card appears, and starts it over when the card is moved in the page (a reorder moves its
@@ -93,10 +110,13 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
     <motion.div
       ref={setRefs}
       layout
+      layoutDependency={layoutKey}
       style={
         {
           // Each overdue card's background flow starts at a different phase, so they don't move in lockstep.
           '--overdue-offset': `${index * -2.3}s`,
+          // Its own layer while dragged: following the finger then only moves it, without repainting it.
+          willChange: isDragging ? 'transform' : undefined,
         } as MotionStyle
       }
       data-type={type}
@@ -104,7 +124,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
         'type-card group relative mb-2.5 flex w-full items-center gap-1.5 rounded-2xl border py-2.5 pr-2 pl-1 transition-[background-color,border-color,box-shadow] duration-200',
         isDragging ? 'shadow-lift' : 'shadow-card',
         // A plain task turns rose when overdue; a typed one keeps its colours (see isRinged).
-        overdue && type === DEFAULT_TASK_TYPE
+        isFlowing
           ? cn('overdue-flow border-overdue-border bg-overdue', isDragging && 'overdue-flow-active')
           : cn(
               // Hover/drag keep the card's own colour, just a shade deeper (lighter in dark mode).
@@ -138,6 +158,7 @@ export function Task({ task, index, appear, overdue, onComplete, onTimeChange, o
         layout: { type: 'spring', stiffness: 520, damping: 42 },
       }}
     >
+      {isFlowing && <OverdueFlow />}
       {isSaving && <SavingShimmer />}
       {hasComet && <ProgressComet />}
 
@@ -279,6 +300,16 @@ function IconButton({ label, className, children, ...props }: ComponentProps<'bu
   )
 }
 
+/** The overdue card's flowing background: two bands sliding inside a clip (see .overdue-flow in index.css). */
+const OverdueFlow = memo(function OverdueFlow() {
+  return (
+    <span aria-hidden data-shatter-whole className="overdue-flow-layer">
+      <span className="overdue-flow-band overdue-flow-base" />
+      <span className="overdue-flow-band overdue-flow-sheen" />
+    </span>
+  )
+})
+
 function SavingShimmer() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
@@ -305,7 +336,7 @@ const COMET_HEAD = fade(7, 10)
  * whatever the card's shape (the outline is measured as 100 units, `pathLength`). Each dash's
  * animation is shifted by its length, so all their fronts move together as one point.
  */
-function ProgressComet() {
+const ProgressComet = memo(function ProgressComet() {
   return (
     <svg aria-hidden data-shatter-skip className="progress-comet">
       <rect className="progress-comet-track" width="100%" height="100%" rx="17" pathLength={100} />
@@ -313,7 +344,7 @@ function ProgressComet() {
       <g className="progress-comet-head">{COMET_HEAD.map(cometDash)}</g>
     </svg>
   )
-}
+})
 
 function cometDash(length: number, i: number) {
   return (

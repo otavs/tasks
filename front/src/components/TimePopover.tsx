@@ -3,6 +3,7 @@ import { KeyboardEvent, RefObject, useEffect, useLayoutEffect, useRef, useState 
 import { createPortal } from 'react-dom'
 
 import { TimeGrid } from './TimeGrid'
+import { useCloseOnBack } from '@/hooks/useCloseOnBack'
 import { cn } from '@/utils/cn'
 import { pad2 } from '@/utils/date'
 import { TimePart, TypedDigit, timeKeyAction } from '@/utils/timeKeys'
@@ -42,7 +43,7 @@ interface Props {
 
 /**
  * A tiny picker that opens right where the task's time was clicked, to change just the time.
- * Pick an hour, then a minute, and it's saved. Clicking outside or Enter saves, Esc cancels.
+ * Pick an hour, then a minute, and it's saved. Clicking outside or Enter saves, Esc (or back) cancels.
  */
 export function TimePopover({ anchor, initialTime, commitRef, onSave, onClose }: Props) {
   const [value, setValue] = useState(initialTime)
@@ -60,6 +61,9 @@ export function TimePopover({ anchor, initialTime, commitRef, onSave, onClose }:
     onClose()
   }
   if (commitRef) commitRef.current = () => commit()
+
+  // The phone's back button cancels, like Esc.
+  useCloseOnBack(true, onClose)
 
   // Follow the anchor on scroll/resize (and refine with the real height).
   useLayoutEffect(() => {

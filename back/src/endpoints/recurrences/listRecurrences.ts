@@ -7,7 +7,7 @@ export const listRecurrences = async (req: Request, res: Response) => {
     const recurrences = await prisma.recurrence.findMany({
       where: { userId: req.userId },
       include: recurrenceInclude,
-      orderBy: { id: 'asc' },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
     })
     res.json(recurrences)
   } catch (error) {

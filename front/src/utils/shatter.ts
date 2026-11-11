@@ -220,6 +220,8 @@ function freezeCopies() {
 
 const isPlainContainer = (element: Element) => {
   if (element instanceof SVGElement || element.children.length < 2) return false
+  // Layers that only make sense together (like the overdue flow's bands, inside their clip) are copied whole.
+  if (element.hasAttribute('data-shatter-whole')) return false
   if ([...element.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())) return false
   const style = getComputedStyle(element)
   return (
