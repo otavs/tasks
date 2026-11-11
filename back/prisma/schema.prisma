@@ -7,7 +7,7 @@ datasource db {
   url      = "file:../../tasks.db"
 }
 
-/// Users are only created through the admin API (see src/admin.ts). Everything else belongs to one of them.
+/// Users are only created with `npm run create-user` (see src/utils/users.ts). Everything else belongs to one of them.
 model User {
   id           Int          @id @default(autoincrement())
   /// Lowercase; see USERNAME_PATTERN in src/utils/auth.ts.

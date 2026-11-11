@@ -5,7 +5,6 @@ import nocache from 'nocache'
 import cors from 'cors'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { startAdminServer } from './admin.ts'
 import { requireAuth } from './middlewares/auth.ts'
 import { rateLimiter } from './middlewares/rateLimit.ts'
 import { authRouter } from './routers/authRouter.ts'
@@ -49,5 +48,3 @@ await demoUserId()
 app.listen(process.env.PORT, () => {
   console.log(`Server listening on port ${process.env.PORT}`)
 })
-
-startAdminServer()
