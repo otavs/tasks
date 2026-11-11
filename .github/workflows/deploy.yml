@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     name: Deploy to home
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     environment: home
     steps:
       - uses: actions/checkout@v7
