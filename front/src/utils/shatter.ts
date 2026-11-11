@@ -1,3 +1,5 @@
+import { glassDust } from './confetti'
+
 type Point = { x: number; y: number }
 type Polygon = Point[]
 type Box = { x: number; y: number; w: number; h: number }
@@ -75,14 +77,14 @@ function lineAngleGap(a: number, b: number) {
   return Math.min(d, Math.PI - d)
 }
 
-const MAX_SHARDS = 64
-
 /**
- * Breaks a width×height pane hit at `impact` into convex shards, the way glass goes: tiny pieces
- * around the impact, bigger ones further out. Pieces are cut across their long side, along whichever
- * of the radial or ring direction is closer, which draws the usual web of radial and circular cracks.
+ * Breaks a width×height pane hit at `impact` into at most `maxShards` convex shards, the way glass
+ * goes: tiny pieces around the impact, bigger ones further out. Pieces are cut across their long side,
+ * along whichever of the radial or ring direction is closer, which draws the usual web of radial and
+ * circular cracks. Fewer shards make every piece bigger, so the pattern keeps its look.
  */
-function fracture(width: number, height: number, impact: Point): Polygon[] {
+function fracture(width: number, height: number, impact: Point, maxShards: number): Polygon[] {
+  const grow = Math.sqrt(MAX_SHARDS / maxShards)
   const shards: Polygon[] = []
   const queue: Polygon[] = [
     [
@@ -97,9 +99,9 @@ function fracture(width: number, height: number, impact: Point): Polygon[] {
     const polygon = queue.shift()!
     const center = centroid(polygon)
     const { length, angle: axis } = longestSpan(polygon)
-    const target = Math.min(85, 14 + distance(center, impact) * 0.22) * rand(0.8, 1.25)
+    const target = Math.min(85, 14 + distance(center, impact) * 0.22) * grow * rand(0.8, 1.25)
 
-    if (length <= target || shards.length + queue.length >= MAX_SHARDS) {
+    if (length <= target || shards.length + queue.length >= maxShards) {
       shards.push(polygon)
       continue
     }
@@ -134,25 +136,40 @@ function transformAt({ vx, vy, vz, drag, spin }: Throw, t: number, start: Point)
   return `translate3d(${x}px, ${y}px, ${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`
 }
 
-const FRAMES = 16
+const FRAMES = 10
 
-/** Samples a throw lasting `duration` ms; the piece fades out from `fadeFrom` (0..1) of the way. */
+/**
+ * Samples a throw lasting `duration` ms; the piece fades out from `fadeFrom` (0..1) of the way.
+ * Drag makes a throw fast at first and slow later, so samples are packed towards the start: a few
+ * frames (each one costs the browser some work to set up) still trace the curve smoothly.
+ */
 function throwKeyframes(motion: Throw, start: Point, duration: number, fadeFrom: number): Keyframe[] {
-  return Array.from({ length: FRAMES + 1 }, (_, i) => {
-    const progress = i / FRAMES
-    return {
-      transform: transformAt(motion, (progress * duration) / 1000, start),
-      opacity: progress < fadeFrom ? 1 : 1 - (progress - fadeFrom) / (1 - fadeFrom),
-    }
+  const at = (offset: number): Keyframe => ({
+    offset,
+    transform: transformAt(motion, (offset * duration) / 1000, start),
   })
+  const frames = Array.from({ length: FRAMES + 1 }, (_, i) => at((i / FRAMES) ** 1.5))
+  // Opacity only needs its turning points: the browser interpolates it across the frames between.
+  frames[0].opacity = 1
+  frames[FRAMES].opacity = 0
+  const fade = frames.findIndex(frame => frame.offset! >= fadeFrom)
+  if (frames[fade].offset === fadeFrom) frames[fade].opacity = 1
+  else frames.splice(fade, 0, { ...at(fadeFrom), opacity: 1 })
+  return frames
 }
 
-function svgPolygon(points: Polygon, width: number, height: number) {
+/** Light catching the glass: a glint across it (the svg's own background), and its broken edges. */
+function glassEdges(points: Polygon, width: number, height: number) {
   const ns = 'http://www.w3.org/2000/svg'
   const svg = document.createElementNS(ns, 'svg')
   svg.setAttribute('width', String(width))
   svg.setAttribute('height', String(height))
-  Object.assign(svg.style, { position: 'absolute', inset: '0', overflow: 'visible' })
+  Object.assign(svg.style, {
+    position: 'absolute',
+    inset: '0',
+    overflow: 'visible',
+    background: `linear-gradient(${rand(100, 170)}deg, rgb(255 255 255 / ${rand(0.15, 0.55)}), rgb(255 255 255 / 0) 60%)`,
+  })
   const polygon = document.createElementNS(ns, 'polygon')
   polygon.setAttribute('points', points.map(p => `${p.x},${p.y}`).join(' '))
   polygon.setAttribute('fill', 'none')
@@ -171,6 +188,17 @@ function absolute(style: Partial<CSSStyleDeclaration>) {
 }
 
 const LAYER_CLASS = 'shatter-layer'
+
+/** Shards for a card breaking on its own. */
+const MAX_SHARDS = 64
+/** Never fewer than this, however many cards are breaking at once. */
+const MIN_SHARDS = 20
+/**
+ * Cards still flying apart. Every moving piece costs the main thread some work on every frame, so
+ * while other cards are in the air a new one breaks into fewer, bigger pieces: completing several
+ * tasks in a row stays smooth, as the number of pieces on screen stays about the same.
+ */
+let flying = 0
 
 /**
  * The copies are stills: their CSS animations (like an overdue card's flowing background) stay
@@ -255,7 +283,9 @@ function takeApart(element: HTMLElement, rect: DOMRect) {
  * Shatters an element like glass from an impact point (viewport coordinates): it breaks into shards
  * (copies of it clipped to polygons) that burst out every way at once, tumbling in 3D under drag and
  * gravity, with a flash, a ring and some glass dust.
- * Everything that moves is a transform or opacity animation, so it runs on the compositor.
+ * Everything that moves is a transform or opacity animation, so it runs on the compositor. Each moving
+ * element still costs the main thread a little on every frame, so there are as few as can be: the dust
+ * is drawn on the confetti canvas (in a worker), and each piece goes away as soon as it's done.
  * Returns false (and does nothing) when the user prefers reduced motion.
  */
 export function shatter(element: HTMLElement, impact?: Point): boolean {
@@ -284,7 +314,10 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
   const { shell, parts } = takeApart(element, rect)
   let longest = 0
 
-  for (const polygon of fracture(width, height, hit)) {
+  const maxShards = Math.max(MIN_SHARDS, Math.round(MAX_SHARDS / (1 + flying)))
+  flying++
+
+  for (const polygon of fracture(width, height, hit, maxShards)) {
     const box = bounds(polygon)
     const local = polygon.map(p => ({ x: p.x - box.x, y: p.y - box.y }))
     const center = centroid(polygon)
@@ -321,14 +354,7 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
     copy.style.top = `${-box.y}px`
     for (const part of parts) if (overlaps(part.box, box)) copy.appendChild(part.copy.cloneNode(true))
     shard.appendChild(copy)
-    // Light catching the glass: a glint across it, and its broken edges.
-    shard.appendChild(
-      absolute({
-        inset: '0',
-        background: `linear-gradient(${rand(100, 170)}deg, rgb(255 255 255 / ${rand(0.15, 0.55)}), rgb(255 255 255 / 0) 60%)`,
-      })
-    )
-    shard.appendChild(svgPolygon(local, box.w, box.h))
+    shard.appendChild(glassEdges(local, box.w, box.h))
     piece.appendChild(shard)
     layer.appendChild(piece)
 
@@ -336,41 +362,11 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
       duration: flight,
       easing: 'linear',
       fill: 'both',
-    })
+    }).onfinish = () => piece.remove()
   }
 
   // Glass dust: tiny bright splinters that fly the fastest.
-  for (let i = 0; i < 18; i++) {
-    const size = rand(2, 5)
-    const speck = absolute({
-      left: `${hitOnScreen.x - size / 2}px`,
-      top: `${hitOnScreen.y - size / 2}px`,
-      width: `${size}px`,
-      height: `${size * rand(1, 2.2)}px`,
-      background: Math.random() < 0.5 ? 'rgb(255 255 255 / 0.95)' : 'rgb(224 242 254 / 0.9)',
-      clipPath: 'polygon(50% 0, 100% 100%, 0 80%)',
-    })
-    layer.appendChild(speck)
-    const angle = rand(0, Math.PI * 2)
-    const speed = rand(1200, 2600)
-    const flight = rand(550, 950)
-    speck.animate(
-      throwKeyframes(
-        {
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 300,
-          vz: 0,
-          drag: 4,
-          spin: [0, 0, rand(-1400, 1400)],
-        },
-        { x: 0, y: 0 },
-        flight,
-        0.4
-      ),
-      { duration: flight, easing: 'linear', fill: 'both' }
-    )
-    longest = Math.max(longest, flight)
-  }
+  glassDust(hitOnScreen)
 
   // The hit itself: a bright flash and a shockwave ring.
   const flash = absolute({
@@ -397,16 +393,19 @@ export function shatter(element: HTMLElement, impact?: Point): boolean {
       { transform: 'scale(1.6)', opacity: 0 },
     ],
     { duration: 320, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'both' }
-  )
+  ).onfinish = () => flash.remove()
   ring.animate(
     [
       { transform: 'scale(0.05)', opacity: 1 },
       { transform: 'scale(1.5)', opacity: 0 },
     ],
     { duration: 480, easing: 'cubic-bezier(0.15, 0.85, 0.3, 1)', fill: 'both' }
-  )
+  ).onfinish = () => ring.remove()
 
   document.body.appendChild(layer)
-  setTimeout(() => layer.remove(), longest + 100)
+  setTimeout(() => {
+    layer.remove()
+    flying--
+  }, longest + 100)
   return true
 }

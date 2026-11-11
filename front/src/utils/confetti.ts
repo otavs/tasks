@@ -54,6 +54,25 @@ export function celebrate(from?: DOMRect) {
   })
 }
 
+/**
+ * Glass dust for a shattering card: tiny bright splinters that fly out fast every way from `at`
+ * (viewport coordinates) and fade. Drawn here, in the canvas's worker, it costs the page nothing.
+ */
+export function glassDust(at: { x: number; y: number }) {
+  instance?.({
+    particleCount: 18,
+    spread: 360,
+    startVelocity: 42,
+    decay: 0.87,
+    gravity: 0.7,
+    ticks: 55,
+    scalar: 0.45,
+    shapes: ['square'],
+    colors: ['#FFFFFF', '#E0F2FE'],
+    origin: { x: at.x / window.innerWidth, y: at.y / window.innerHeight },
+  })
+}
+
 /** The whole day is done: a longer show from both sides. */
 export function celebrateBig() {
   if (!instance) return
